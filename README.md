@@ -64,6 +64,7 @@ Options:
   -d, --delay <SECONDS>      Delay between iterations [default: 2]
       --init                 Initialize project with templates
       --dry-run              Don't execute claude, just show what would run
+      --yolo                 Skip all permission prompts (autonomous mode)
   -h, --help                 Print help
 ```
 
@@ -150,6 +151,48 @@ Claude will open a browser and can:
 
 This is the "killer feature" for web app verification. Don't skip it.
 
+## Permissions
+
+For Ralph to run autonomously without prompting you to approve every action, you have two options:
+
+### Option 1: Use `--yolo` (simple, wide open)
+```bash
+ralph --yolo
+```
+This passes `--dangerously-skip-permissions` to Claude. Fast to get started, but approves everything.
+
+### Option 2: Use `.claude/settings.json` (recommended)
+`ralph --init` creates a `.claude/settings.json` with sensible defaults:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm test*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Read",
+      "Write",
+      "Edit"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)"
+    ]
+  }
+}
+```
+
+This pre-approves common development commands while blocking dangerous ones. Edit to match your workflow.
+
+With settings.json in place, just run:
+```bash
+ralph
+```
+
+Claude will auto-approve allowed commands and skip denied ones, but still prompt for anything not in the list.
+
 ## Files
 
 | File | Purpose |
@@ -159,6 +202,7 @@ This is the "killer feature" for web app verification. Don't skip it.
 | `progress.md` | Append-only log of completed work |
 | `guardrails.md` | Hard rules (never commit failing tests, etc.) |
 | `plan.md` | Current implementation plan (generated) |
+| `.claude/settings.json` | Permission rules for autonomous mode |
 | `.claude/commands/*.md` | Claude Code slash commands |
 
 ## Tips

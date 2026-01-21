@@ -34,6 +34,10 @@ struct Args {
     /// Run in dry-run mode (don't execute claude)
     #[arg(long)]
     dry_run: bool,
+
+    /// Skip all permission prompts (passes --dangerously-skip-permissions to claude)
+    #[arg(long)]
+    yolo: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -101,6 +105,7 @@ fn get_templates() -> Vec<(&'static str, &'static str)> {
         ("PRD.json", include_str!("../templates/PRD.json")),
         ("progress.md", include_str!("../templates/progress.md")),
         ("guardrails.md", include_str!("../templates/guardrails.md")),
+        (".claude/settings.json", include_str!("../templates/settings.json")),
         (".claude/commands/interview.md", include_str!("../templates/commands/interview.md")),
         (".claude/commands/plan.md", include_str!("../templates/commands/plan.md")),
         (".claude/commands/build.md", include_str!("../templates/commands/build.md")),
@@ -164,7 +169,7 @@ fn run_loop(args: &Args) {
         log_progress(&format!("Starting iteration {}", iteration));
 
         // Run claude
-        let status = run_claude(&prompt);
+        let status = run_claude(&prompt, args.yolo);
 
         match status {
             Ok(s) if s.success() => {
@@ -207,12 +212,15 @@ fn check_prd_complete(prd_path: &str) -> Result<bool, String> {
     Ok(all_passing)
 }
 
-fn run_claude(prompt: &str) -> io::Result<ExitStatus> {
-    Command::new("claude")
-        .arg("--print")
-        .arg("--prompt")
-        .arg(prompt)
-        .status()
+fn run_claude(prompt: &str, skip_permissions: bool) -> io::Result<ExitStatus> {
+    let mut cmd = Command::new("claude");
+    cmd.arg("--print").arg("--prompt").arg(prompt);
+
+    if skip_permissions {
+        cmd.arg("--dangerously-skip-permissions");
+    }
+
+    cmd.status()
 }
 
 fn log_progress(message: &str) {
