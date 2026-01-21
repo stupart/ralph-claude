@@ -125,9 +125,30 @@ Only mark "passing" when ALL acceptance criteria are verified.
 From Boris Cherny: "Give Claude a way to verify its work - this 2-3x the quality."
 
 Every feature must be verified before marking complete:
-- **Web apps**: Use dev-browser or Chrome extension to test UI
+- **Web apps**: Use `/chrome` to test UI (see below)
 - **APIs**: Run actual requests, test error cases
 - **All code**: Tests pass, typecheck passes, lint passes
+
+### Using `/chrome` for UI Testing
+
+Claude Code can launch and control a browser to verify web UI:
+
+```bash
+# Start your dev server first
+npm run dev
+
+# Then in Claude Code
+/chrome http://localhost:3000
+```
+
+Claude will open a browser and can:
+- Click through UI flows
+- Fill out and submit forms
+- Verify elements render correctly
+- Test error states and edge cases
+- Screenshot and analyze visual output
+
+This is the "killer feature" for web app verification. Don't skip it.
 
 ## Files
 

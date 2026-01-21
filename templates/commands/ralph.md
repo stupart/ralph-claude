@@ -24,7 +24,10 @@ For each task:
 1. Implement the change
 2. Write/update tests
 3. Verify: tests pass, typecheck passes, lint passes
-4. Verify manually (dev-browser, curl, etc.)
+4. Verify manually:
+   - Web UI: Use `/chrome http://localhost:PORT` to open browser and test the UI
+   - APIs: Use curl or similar to test endpoints
+   - CLI: Run the command and verify output
 5. Commit with descriptive message
 6. Update progress.md
 7. Update PRD.json status if feature complete

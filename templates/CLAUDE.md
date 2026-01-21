@@ -7,9 +7,19 @@ This project uses the Ralph method for autonomous Claude Code execution. Read th
 Give Claude a way to verify its work - this 2-3x the quality of results.
 
 ### Web Apps
-- Use the dev-browser skill or Claude Chrome extension to actually test UI
-- Test end-to-end flows, not just unit tests
-- Verify UX feels good, not just "works"
+Use `/chrome` to test UI changes. This launches a browser Claude can control:
+
+```
+/chrome http://localhost:3000
+```
+
+Then instruct Claude to:
+- Click through the UI flow you just built
+- Verify elements render correctly
+- Test form submissions, error states, edge cases
+- Check that the UX feels right, not just "works"
+
+Don't rely only on unit tests - actually see the UI.
 
 ### APIs/Backend
 - Run actual requests against the API

@@ -11,7 +11,10 @@ You are in BUILDING mode.
 3. Run tests - fix until they pass
 4. Run typecheck - fix until it passes
 5. Run lint - fix until it passes
-6. Verify manually (browser, curl, etc.)
+6. Verify manually:
+   - For web UI: Use `/chrome http://localhost:PORT` to open browser, click through the flow, verify it works
+   - For APIs: Use curl to hit endpoints, verify responses
+   - For CLI: Run commands, verify output
 7. Commit with descriptive message referencing feature ID
 
 ## After Each Task
