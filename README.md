@@ -13,6 +13,13 @@ Based on the [Ralph Wiggum Technique](https://github.com/ghuntley/how-to-ralph-w
 
 The key insight: **fresh context per iteration**, with state persisted to files + git. Each loop starts clean, reads the current state, does one thing, commits, and exits.
 
+## Prerequisites
+
+- **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)** — Anthropic's CLI for Claude (`claude` command)
+- **[Rust](https://rustup.rs/)** — for building ralph (`cargo`)
+- **Git** — for version control
+- **caffeinate** (macOS only, built-in) — for unattended runs
+
 ## Install
 
 ```bash
