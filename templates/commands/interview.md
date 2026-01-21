@@ -1,6 +1,6 @@
 ## Pre-Interview: Brain Dump Analysis
 
-First, check if `docs/brain-dump.md` exists. If it does:
+First, check if any brain dump files exist in `docs/` (pattern: `brain-dump-*.md`). If they do:
 
 1. Read it thoroughly
 2. Use the Task tool with subagent_type=Explore to deeply analyze any links, references, or technical concepts mentioned

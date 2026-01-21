@@ -74,7 +74,7 @@ Brain dump?
 >
 >
 
-  create docs/brain-dump.md
+  create docs/brain-dump-001-2026-01-21.md
 
 Done! Run:
   cd myproject && ralph --yolo
@@ -142,7 +142,7 @@ Brain dump?
 >
 >
 
-  create docs/brain-dump.md
+  create docs/brain-dump-001-2026-01-21.md
 ```
 
 ```bash
@@ -153,28 +153,32 @@ Claude analyzes your existing codebase + brain dump, then interviews you about w
 
 ---
 
-### 4. Existing Ralph Project, Adding Brain Dump Later
+### 4. Existing Ralph Project, Adding More Context Later
 
-Already initialized but want to add context before re-running interview:
+Already initialized but want to add more context? Brain dumps are numbered, so you can add more:
 
 ```bash
 cd my-ralph-project
 
-# Create brain dump manually
+# Create additional brain dump manually
 mkdir -p docs
-cat > docs/brain-dump.md << 'EOF'
-# Brain Dump
+cat > docs/brain-dump-002-2026-01-22.md << 'EOF'
+# Brain Dump #002
+
+Captured: 2026-01-22
+
+---
 
 Actually, I realized we need offline support.
 Check out how Notion does local-first sync.
 Also the error messages are confusing - make them friendlier.
 EOF
 
-# Re-run interview (it will read the brain dump)
+# Re-run interview (it will read ALL brain dumps)
 claude /interview
 ```
 
-Or just delete PRD.json features to trigger a fresh interview:
+Or reset PRD to trigger a fresh interview:
 ```bash
 echo '{"project": "My Project", "features": []}' > PRD.json
 ralph --yolo
@@ -356,7 +360,7 @@ With settings.json, just run `ralph` (no --yolo) and it auto-approves safe comma
 | `progress.md` | Append-only log of completed work |
 | `guardrails.md` | Hard rules (never commit failing tests, etc.) |
 | `plan.md` | Current implementation plan (generated) |
-| `docs/brain-dump.md` | Initial context dump (optional) |
+| `docs/brain-dump-NNN-YYYY-MM-DD.md` | Numbered & dated context dumps |
 | `.claude/settings.json` | Permission rules for autonomous mode |
 | `.claude/commands/*.md` | Claude Code slash commands |
 

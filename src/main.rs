@@ -225,11 +225,42 @@ fn prompt_brain_dump() {
         return;
     }
 
-    // Save brain dump
+    // Save brain dump with numbered + dated filename
     fs::create_dir_all("docs").expect("Failed to create docs directory");
-    let content = format!("# Brain Dump\n\nCaptured during project initialization.\n\n---\n\n{}\n", lines.join("\n"));
-    fs::write("docs/brain-dump.md", content).expect("Failed to write brain dump");
-    println!("  {} docs/brain-dump.md", "create".green());
+
+    let next_num = get_next_brain_dump_number();
+    let date = Local::now().format("%Y-%m-%d");
+    let filename = format!("docs/brain-dump-{:03}-{}.md", next_num, date);
+
+    let content = format!("# Brain Dump #{:03}\n\nCaptured: {}\n\n---\n\n{}\n", next_num, date, lines.join("\n"));
+    fs::write(&filename, content).expect("Failed to write brain dump");
+    println!("  {} {}", "create".green(), filename);
+}
+
+fn get_next_brain_dump_number() -> u32 {
+    let docs_path = Path::new("docs");
+    if !docs_path.exists() {
+        return 1;
+    }
+
+    let mut max_num: u32 = 0;
+
+    if let Ok(entries) = fs::read_dir(docs_path) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            // Match pattern: brain-dump-XXX-YYYY-MM-DD.md
+            if name.starts_with("brain-dump-") && name.ends_with(".md") {
+                // Extract the number part (positions 11-14 in "brain-dump-XXX-...")
+                if let Some(num_str) = name.get(11..14) {
+                    if let Ok(num) = num_str.parse::<u32>() {
+                        max_num = max_num.max(num);
+                    }
+                }
+            }
+        }
+    }
+
+    max_num + 1
 }
 
 fn get_templates() -> Vec<(&'static str, &'static str)> {
