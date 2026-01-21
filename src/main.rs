@@ -163,6 +163,9 @@ fn init_project(project_name: Option<&str>) {
         }
     }
 
+    // Prompt for brain dump
+    prompt_brain_dump();
+
     println!("\n{}", "Done! Run:".green().bold());
     if project_name.is_some() {
         println!("  cd {} && ralph --yolo", project_dir);
@@ -173,6 +176,60 @@ fn init_project(project_name: Option<&str>) {
     println!("  1. Interview you about what to build");
     println!("  2. Generate the PRD with features");
     println!("  3. Execute the build loop until complete");
+}
+
+fn prompt_brain_dump() {
+    println!("\n{}", "Brain dump?".cyan().bold());
+    println!("{}", "(Paste any context, ideas, links, references - press Enter twice when done, or just Enter to skip)".dimmed());
+    print!("> ");
+    io::stdout().flush().unwrap();
+
+    let mut lines: Vec<String> = Vec::new();
+    let mut empty_line_count = 0;
+
+    loop {
+        let mut line = String::new();
+        match io::stdin().read_line(&mut line) {
+            Ok(0) => break, // EOF
+            Ok(_) => {
+                let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
+                if trimmed.is_empty() {
+                    empty_line_count += 1;
+                    if empty_line_count >= 1 && lines.is_empty() {
+                        // Just hit enter with no content - skip
+                        println!("  {} brain dump", "skip".yellow());
+                        return;
+                    } else if empty_line_count >= 2 {
+                        // Two empty lines after content - done
+                        break;
+                    }
+                    lines.push(String::new());
+                } else {
+                    empty_line_count = 0;
+                    lines.push(trimmed.to_string());
+                }
+                print!("> ");
+                io::stdout().flush().unwrap();
+            }
+            Err(_) => break,
+        }
+    }
+
+    // Remove trailing empty lines
+    while lines.last().map(|s| s.is_empty()).unwrap_or(false) {
+        lines.pop();
+    }
+
+    if lines.is_empty() {
+        println!("  {} brain dump", "skip".yellow());
+        return;
+    }
+
+    // Save brain dump
+    fs::create_dir_all("docs").expect("Failed to create docs directory");
+    let content = format!("# Brain Dump\n\nCaptured during project initialization.\n\n---\n\n{}\n", lines.join("\n"));
+    fs::write("docs/brain-dump.md", content).expect("Failed to write brain dump");
+    println!("  {} docs/brain-dump.md", "create".green());
 }
 
 fn get_templates() -> Vec<(&'static str, &'static str)> {
