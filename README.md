@@ -366,6 +366,26 @@ With settings.json, just run `ralph` (no --yolo) and it auto-approves safe comma
 
 ---
 
+## Running Unattended (macOS)
+
+Prevent your Mac from sleeping while Ralph runs:
+
+```bash
+caffeinate -is ralph --yolo
+```
+
+Flags:
+- `-i` — prevent idle sleep
+- `-s` — prevent system sleep (lid close, AC power only)
+- `-d` — prevent display sleep
+
+For maximum persistence (AC + battery):
+```bash
+caffeinate -ims ralph --yolo
+```
+
+---
+
 ## Tips
 
 - **Start small**: Begin with 1-2 features, add more as they complete
