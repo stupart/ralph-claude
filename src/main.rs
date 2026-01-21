@@ -11,6 +11,10 @@ use std::process::{Command, ExitStatus};
 #[command(name = "ralph")]
 #[command(about = "Run Claude Code in autonomous loops until PRD is complete")]
 struct Args {
+    /// Project name (creates folder if used with --init)
+    #[arg()]
+    project_name: Option<String>,
+
     /// Path to the prompt file (default: .claude/commands/ralph.md)
     #[arg(short, long, default_value = ".claude/commands/ralph.md")]
     prompt: String,
@@ -68,7 +72,7 @@ fn main() {
     let args = Args::parse();
 
     if args.init {
-        init_project();
+        init_project(args.project_name.as_deref());
         return;
     }
 
@@ -112,8 +116,34 @@ fn run_interview(skip_permissions: bool) {
     }
 }
 
-fn init_project() {
+fn init_project(project_name: Option<&str>) {
+    // If project name provided, create and cd into that folder
+    let project_dir = if let Some(name) = project_name {
+        let path = Path::new(name);
+        if path.exists() {
+            eprintln!("{} '{}' already exists", "Error:".red(), name);
+            std::process::exit(1);
+        }
+        fs::create_dir_all(name).expect("Failed to create project directory");
+        std::env::set_current_dir(name).expect("Failed to cd into project directory");
+        println!("{} {}/", "Created".green(), name);
+        name.to_string()
+    } else {
+        std::env::current_dir()
+            .unwrap()
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string()
+    };
+
     println!("{}", "Initializing ralph project...".cyan().bold());
+
+    // Initialize git if not already a repo
+    if !Path::new(".git").exists() {
+        Command::new("git").arg("init").status().ok();
+        println!("  {} git repository", "init".green());
+    }
 
     // Create directories
     fs::create_dir_all(".claude/commands").expect("Failed to create .claude/commands");
@@ -131,7 +161,11 @@ fn init_project() {
     }
 
     println!("\n{}", "Done! Run:".green().bold());
-    println!("  ralph --yolo");
+    if project_name.is_some() {
+        println!("  cd {} && ralph --yolo", project_dir);
+    } else {
+        println!("  ralph --yolo");
+    }
     println!("\n{}", "This will:".dimmed());
     println!("  1. Interview you about what to build");
     println!("  2. Generate the PRD with features");
