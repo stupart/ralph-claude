@@ -214,11 +214,18 @@ fn check_prd_complete(prd_path: &str) -> Result<bool, String> {
 
 fn run_claude(prompt: &str, skip_permissions: bool) -> io::Result<ExitStatus> {
     let mut cmd = Command::new("claude");
-    cmd.arg("-p").arg(prompt);
+
+    // Pass prompt as positional argument (interactive mode)
+    cmd.arg(prompt);
 
     if skip_permissions {
         cmd.arg("--dangerously-skip-permissions");
     }
+
+    // Inherit stdio so user can see Claude working
+    cmd.stdin(std::process::Stdio::inherit())
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit());
 
     cmd.status()
 }
