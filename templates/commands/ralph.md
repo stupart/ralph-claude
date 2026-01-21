@@ -24,13 +24,14 @@ For each task:
 1. Implement the change
 2. Write/update tests
 3. Verify: tests pass, typecheck passes, lint passes
-4. Verify manually:
-   - Web UI: Use `/chrome http://localhost:PORT` to open browser and test the UI
-   - APIs: Use curl or similar to test endpoints
-   - CLI: Run the command and verify output
+4. **VERIFY THE APP ACTUALLY WORKS** (critical - don't skip this):
+   - Web UI: Start dev server, use `/chrome` to open browser, click around and test
+   - CLI/TUI: Run the app (`cargo run`, `node index.js`, etc.) and test it works
+   - API: Use curl to hit endpoints and verify responses
+   - Actually interact with what you built - don't just assume it works
 5. Commit with descriptive message
 6. Update progress.md
-7. Update PRD.json status if feature complete
+7. Update PRD.json - change status to "passing" ONLY after verification
 8. Update plan.md to mark task done
 
 ## Completion Criteria
@@ -44,3 +45,4 @@ Stop when:
 - Verify everything - "it works" means tested and verified
 - One task at a time - don't parallelize features
 - Commit often - small, atomic commits with clear messages
+- If you can't verify something, don't mark it passing
