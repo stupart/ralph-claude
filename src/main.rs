@@ -47,9 +47,12 @@ struct Args {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Feature {
     id: String,
-    title: String,
+    #[serde(alias = "title", alias = "name")]
+    name: String,
+    #[serde(default)]
     description: String,
     status: FeatureStatus,
+    #[serde(default)]
     acceptance_criteria: Vec<String>,
 }
 
