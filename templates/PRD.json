@@ -1,0 +1,16 @@
+{
+  "project": "My Project",
+  "features": [
+    {
+      "id": "F001",
+      "title": "Example Feature",
+      "description": "A placeholder feature to demonstrate the PRD structure",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Criterion 1: Describe what must be true",
+        "Criterion 2: Describe how to verify",
+        "Criterion 3: Include edge cases"
+      ]
+    }
+  ]
+}
