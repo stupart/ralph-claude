@@ -35,30 +35,53 @@ cp target/release/ralph /usr/local/bin/
 ## Quick Start
 
 ```bash
-ralph --init myproject
-cd myproject
-ralph --yolo
+ralph myproject
 ```
 
-That's it. Ralph will:
-1. Ask for an optional brain dump (context, ideas, links)
-2. Interview you about what to build
-3. Generate the PRD with features
-4. Execute the build loop until complete
+That's it. One command does everything:
+1. Creates `myproject/` folder
+2. Initializes ralph templates
+3. Prompts for brain dump (optional context)
+4. Interviews you about what to build
+5. Runs autonomous build loop until complete
 
 ---
 
-## Usage Scenarios
+## Usage
 
-### 1. New Project with Brain Dump
-
-You have ideas, links, notes - dump them all upfront:
+### New Project
 
 ```bash
-ralph --init myproject
+ralph myproject
 ```
 
+Creates folder → init → brain dump prompt → interview → build loop.
+
+### Existing Folder
+
+```bash
+cd my-existing-app
+ralph
 ```
+
+Initializes ralph (if needed) → brain dump prompt (if new) → interview (if PRD empty) → build loop.
+
+### Continue Where You Left Off
+
+```bash
+cd my-ralph-project
+ralph
+```
+
+If already initialized with features in PRD, goes straight to the build loop.
+
+---
+
+## What Happens
+
+```
+$ ralph myproject
+
 Created myproject/
 Initializing ralph project...
   init git repository
@@ -74,194 +97,41 @@ Initializing ralph project...
 
 Brain dump?
 (Paste any context, ideas, links, references - press Enter twice when done, or just Enter to skip)
-> I want a CLI tool like ripgrep but for JSON files
-> should support jq-like queries but simpler syntax
-> look at how miller (mlr) handles CSV - similar UX
+> I want a CLI tool like ripgrep but for JSON
+> should support jq-like queries but simpler
 > must be fast, written in Rust
 >
 >
 
   create docs/brain-dump-001-2026-01-21.md
 
-Done! Run:
-  cd myproject && ralph --yolo
-```
+Setup complete!
 
-Then start the loop:
-```bash
-cd myproject
-ralph --yolo
-```
+PRD is empty. Starting interview...
+[Claude interviews you, asks 20-50 questions]
 
-Claude reads your brain dump, deeply analyzes it, then interviews you with context-aware questions.
+Interview complete. Starting build loop...
 
----
+[23:45:01] Iteration 1
+  PRD status: 0/5
+[Claude implements F000: Project Setup]
 
-### 2. New Project, No Brain Dump
+[23:47:23] Iteration 2
+  PRD status: 1/5
+[Claude implements F001: ...]
 
-Just hit Enter to skip:
+...
 
-```bash
-ralph --init myproject
-```
-
-```
-Brain dump?
-(Paste any context, ideas, links, references - press Enter twice when done, or just Enter to skip)
->
-
-  skip brain dump
-
-Done! Run:
-  cd myproject && ralph --yolo
-```
-
-```bash
-cd myproject
-ralph --yolo
-```
-
-Interview starts from scratch.
-
----
-
-### 3. Existing Project, Adding Ralph
-
-You have code but want Ralph to help extend it:
-
-```bash
-cd my-existing-app
-ralph --init
-```
-
-```
-Initializing ralph project...
-  skip .git (already exists)
-  create CLAUDE.md
-  create PRD.json
-  ...
-
-Brain dump?
-> The auth system is fragile, don't refactor it
-> Need to add a notification system
-> Use the pattern from /services/email.ts
-> Product wants real-time but no websockets yet
->
->
-
-  create docs/brain-dump-001-2026-01-21.md
-```
-
-```bash
-ralph --yolo
-```
-
-Claude analyzes your existing codebase + brain dump, then interviews you about what to add/change.
-
----
-
-### 4. Existing Ralph Project, Adding More Context Later
-
-Already initialized but want to add more context? Brain dumps are numbered, so you can add more:
-
-```bash
-cd my-ralph-project
-
-# Create additional brain dump manually
-mkdir -p docs
-cat > docs/brain-dump-002-2026-01-22.md << 'EOF'
-# Brain Dump #002
-
-Captured: 2026-01-22
-
----
-
-Actually, I realized we need offline support.
-Check out how Notion does local-first sync.
-Also the error messages are confusing - make them friendlier.
-EOF
-
-# Re-run interview (it will read ALL brain dumps)
-claude /interview
-```
-
-Or reset PRD to trigger a fresh interview:
-```bash
-echo '{"project": "My Project", "features": []}' > PRD.json
-ralph --yolo
+All features passing! PRD complete.
+Ralph loop finished.
 ```
 
 ---
 
-### 5. Existing Ralph Project, No Changes
+## Brain Dump
 
-Just continue where you left off:
+The brain dump is your chance to front-load context before the interview. Good brain dumps include:
 
-```bash
-cd my-ralph-project
-ralph --yolo
-```
-
-If PRD has features, Ralph continues the build loop. If PRD is empty, it runs the interview first.
-
----
-
-## Full Command Reference
-
-```
-ralph [OPTIONS] [PROJECT_NAME]
-
-Arguments:
-  [PROJECT_NAME]         Project name (creates folder if used with --init)
-
-Options:
-  -p, --prompt <PROMPT>  Path to prompt file [default: .claude/commands/ralph.md]
-      --prd <PRD>        Path to PRD file [default: PRD.json]
-  -m, --max-iterations   Maximum iterations, 0 = unlimited [default: 0]
-  -d, --delay <SECONDS>  Delay between iterations [default: 2]
-      --init             Initialize project with templates
-      --dry-run          Don't execute claude, just show what would run
-      --yolo             Skip all permission prompts (autonomous mode)
-  -h, --help             Print help
-```
-
----
-
-## Workflow
-
-### Phase 1: Interview
-```bash
-ralph --yolo  # (runs interview automatically if PRD is empty)
-# or explicitly:
-claude /interview
-```
-Claude reads any brain dump, analyzes the codebase (if existing), then asks 20-50 detailed questions. Outputs structured PRD.json.
-
-### Phase 2: Plan
-```bash
-claude /plan
-```
-Claude analyzes the codebase, identifies gaps, and creates a prioritized implementation plan in `plan.md`.
-
-### Phase 3: Build (Loop)
-```bash
-ralph --yolo
-```
-Runs Claude in a loop. Each iteration:
-1. Reads state files (PRD, progress, plan)
-2. Executes next task
-3. Verifies (tests, typecheck, lint, manual)
-4. Commits with descriptive message
-5. Updates progress.md and PRD.json
-6. Exits cleanly
-
-Loop continues until all features in PRD.json have status "passing".
-
----
-
-## Brain Dump Tips
-
-Good brain dumps include:
 - **What you're building** (even if vague)
 - **Inspiration/references** ("like X but simpler")
 - **Technical constraints** ("must work offline", "no external deps")
@@ -269,7 +139,52 @@ Good brain dumps include:
 - **Anti-patterns** ("don't use Redux", "avoid class components")
 - **Context** about existing code ("auth is fragile, don't touch")
 
-Claude will analyze all of this before asking questions, so your interview is more focused and productive.
+Brain dumps are saved as numbered, dated files:
+```
+docs/brain-dump-001-2026-01-21.md
+docs/brain-dump-002-2026-01-22.md
+```
+
+The interview reads ALL brain dumps, so you can add more context later by creating additional files.
+
+---
+
+## Running Unattended (macOS)
+
+Prevent your Mac from sleeping while Ralph runs:
+
+```bash
+caffeinate -is ralph myproject
+```
+
+Flags:
+- `-i` — prevent idle sleep
+- `-s` — prevent system sleep (lid close, AC power only)
+- `-d` — prevent display sleep
+
+For maximum persistence (AC + battery):
+```bash
+caffeinate -ims ralph myproject
+```
+
+---
+
+## Command Reference
+
+```
+ralph [PROJECT_NAME] [OPTIONS]
+
+Arguments:
+  [PROJECT_NAME]         Creates/enters this folder (optional)
+
+Options:
+  -p, --prompt <FILE>    Prompt file [default: .claude/commands/ralph.md]
+      --prd <FILE>       PRD file [default: PRD.json]
+  -m, --max-iterations   Max iterations, 0 = unlimited [default: 0]
+  -d, --delay <SECS>     Delay between iterations [default: 2]
+      --dry-run          Show what would run without executing
+  -h, --help             Print help
+```
 
 ---
 
@@ -312,49 +227,11 @@ Every feature must be verified before marking complete:
 ### Using `/chrome` for UI Testing
 
 ```bash
-# Start your dev server first
-npm run dev
-
-# Then in Claude Code
+# In Claude Code
 /chrome http://localhost:3000
 ```
 
 Claude will open a browser and can click through UI flows, fill forms, verify rendering, test edge cases.
-
----
-
-## Permissions
-
-### Option 1: Use `--yolo` (simple, wide open)
-```bash
-ralph --yolo
-```
-Passes `--dangerously-skip-permissions` to Claude. Fast but approves everything.
-
-### Option 2: Use `.claude/settings.json` (recommended)
-`ralph --init` creates sensible defaults:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm run *)",
-      "Bash(npm test*)",
-      "Bash(git add *)",
-      "Bash(git commit *)",
-      "Read",
-      "Write",
-      "Edit"
-    ],
-    "deny": [
-      "Bash(rm -rf *)",
-      "Bash(git push --force*)"
-    ]
-  }
-}
-```
-
-With settings.json, just run `ralph` (no --yolo) and it auto-approves safe commands.
 
 ---
 
@@ -368,28 +245,8 @@ With settings.json, just run `ralph` (no --yolo) and it auto-approves safe comma
 | `guardrails.md` | Hard rules (never commit failing tests, etc.) |
 | `plan.md` | Current implementation plan (generated) |
 | `docs/brain-dump-NNN-YYYY-MM-DD.md` | Numbered & dated context dumps |
-| `.claude/settings.json` | Permission rules for autonomous mode |
+| `.claude/settings.json` | Permission rules |
 | `.claude/commands/*.md` | Claude Code slash commands |
-
----
-
-## Running Unattended (macOS)
-
-Prevent your Mac from sleeping while Ralph runs:
-
-```bash
-caffeinate -is ralph --yolo
-```
-
-Flags:
-- `-i` — prevent idle sleep
-- `-s` — prevent system sleep (lid close, AC power only)
-- `-d` — prevent display sleep
-
-For maximum persistence (AC + battery):
-```bash
-caffeinate -ims ralph --yolo
-```
 
 ---
 

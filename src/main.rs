@@ -11,15 +11,15 @@ use std::process::{Command, ExitStatus};
 #[command(name = "ralph")]
 #[command(about = "Run Claude Code in autonomous loops until PRD is complete")]
 struct Args {
-    /// Project name (creates folder if used with --init)
+    /// Project name (creates folder if provided)
     #[arg()]
     project_name: Option<String>,
 
-    /// Path to the prompt file (default: .claude/commands/ralph.md)
+    /// Path to the prompt file
     #[arg(short, long, default_value = ".claude/commands/ralph.md")]
     prompt: String,
 
-    /// Path to PRD file (default: PRD.json)
+    /// Path to PRD file
     #[arg(long, default_value = "PRD.json")]
     prd: String,
 
@@ -31,17 +31,9 @@ struct Args {
     #[arg(short, long, default_value = "2")]
     delay: u64,
 
-    /// Initialize a new project with ralph templates
-    #[arg(long)]
-    init: bool,
-
     /// Run in dry-run mode (don't execute claude)
     #[arg(long)]
     dry_run: bool,
-
-    /// Skip all permission prompts (passes --dangerously-skip-permissions to claude)
-    #[arg(long)]
-    yolo: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -74,19 +66,39 @@ struct Prd {
 fn main() {
     let args = Args::parse();
 
-    if args.init {
-        init_project(args.project_name.as_deref());
-        return;
+    // If project name provided, create folder and cd into it
+    if let Some(ref name) = args.project_name {
+        let path = Path::new(name);
+        if path.exists() {
+            // Folder exists, cd into it
+            std::env::set_current_dir(name).expect("Failed to cd into project directory");
+            println!("{} {}/", "Entering".cyan(), name);
+        } else {
+            // Create folder and cd into it
+            fs::create_dir_all(name).expect("Failed to create project directory");
+            std::env::set_current_dir(name).expect("Failed to cd into project directory");
+            println!("{} {}/", "Created".green(), name);
+        }
     }
 
-    // Check if PRD is empty - if so, run interview first
+    // Initialize if not already set up
+    if !is_initialized() {
+        init_project();
+    }
+
+    // Interview if PRD is empty
     if needs_interview(&args.prd) {
-        println!("{}", "PRD is empty. Starting interview...".cyan().bold());
-        run_interview(args.yolo);
+        println!("\n{}", "PRD is empty. Starting interview...".cyan().bold());
+        run_interview();
         println!("\n{}", "Interview complete. Starting build loop...".green().bold());
     }
 
+    // Run the build loop
     run_loop(&args);
+}
+
+fn is_initialized() -> bool {
+    Path::new("CLAUDE.md").exists() && Path::new("PRD.json").exists()
 }
 
 fn needs_interview(prd_path: &str) -> bool {
@@ -94,24 +106,23 @@ fn needs_interview(prd_path: &str) -> bool {
         Ok(content) => {
             match serde_json::from_str::<Prd>(&content) {
                 Ok(prd) => prd.features.is_empty(),
-                Err(_) => true, // Can't parse, probably needs setup
+                Err(_) => true,
             }
         }
-        Err(_) => true, // No PRD file, needs setup
+        Err(_) => true,
     }
 }
 
-fn run_interview(skip_permissions: bool) {
+fn run_interview() {
     let interview_prompt = match fs::read_to_string(".claude/commands/interview.md") {
         Ok(p) => p,
         Err(_) => {
             eprintln!("{}", "Error: .claude/commands/interview.md not found".red());
-            eprintln!("Run {} first", "ralph --init".cyan());
             std::process::exit(1);
         }
     };
 
-    let status = run_claude(&interview_prompt, skip_permissions);
+    let status = run_claude(&interview_prompt);
 
     if let Err(e) = status {
         eprintln!("{} {}", "Interview failed:".red(), e);
@@ -119,27 +130,7 @@ fn run_interview(skip_permissions: bool) {
     }
 }
 
-fn init_project(project_name: Option<&str>) {
-    // If project name provided, create and cd into that folder
-    let project_dir = if let Some(name) = project_name {
-        let path = Path::new(name);
-        if path.exists() {
-            eprintln!("{} '{}' already exists", "Error:".red(), name);
-            std::process::exit(1);
-        }
-        fs::create_dir_all(name).expect("Failed to create project directory");
-        std::env::set_current_dir(name).expect("Failed to cd into project directory");
-        println!("{} {}/", "Created".green(), name);
-        name.to_string()
-    } else {
-        std::env::current_dir()
-            .unwrap()
-            .file_name()
-            .unwrap()
-            .to_string_lossy()
-            .to_string()
-    };
-
+fn init_project() {
     println!("{}", "Initializing ralph project...".cyan().bold());
 
     // Initialize git if not already a repo
@@ -158,7 +149,7 @@ fn init_project(project_name: Option<&str>) {
         if Path::new(path).exists() {
             println!("  {} {} (already exists)", "skip".yellow(), path);
         } else {
-            fs::write(path, content).expect(&format!("Failed to write {}", path));
+            fs::write(path, content).unwrap_or_else(|_| panic!("Failed to write {}", path));
             println!("  {} {}", "create".green(), path);
         }
     }
@@ -166,16 +157,21 @@ fn init_project(project_name: Option<&str>) {
     // Prompt for brain dump
     prompt_brain_dump();
 
-    println!("\n{}", "Done! Run:".green().bold());
-    if project_name.is_some() {
-        println!("  cd {} && ralph --yolo", project_dir);
-    } else {
-        println!("  ralph --yolo");
-    }
-    println!("\n{}", "This will:".dimmed());
-    println!("  1. Interview you about what to build");
-    println!("  2. Generate the PRD with features");
-    println!("  3. Execute the build loop until complete");
+    println!("\n{}", "Setup complete!".green().bold());
+}
+
+fn get_templates() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("CLAUDE.md", include_str!("../templates/CLAUDE.md")),
+        ("PRD.json", include_str!("../templates/PRD.json")),
+        ("progress.md", include_str!("../templates/progress.md")),
+        ("guardrails.md", include_str!("../templates/guardrails.md")),
+        (".claude/settings.json", include_str!("../templates/settings.json")),
+        (".claude/commands/interview.md", include_str!("../templates/commands/interview.md")),
+        (".claude/commands/plan.md", include_str!("../templates/commands/plan.md")),
+        (".claude/commands/build.md", include_str!("../templates/commands/build.md")),
+        (".claude/commands/ralph.md", include_str!("../templates/commands/ralph.md")),
+    ]
 }
 
 fn prompt_brain_dump() {
@@ -190,17 +186,15 @@ fn prompt_brain_dump() {
     loop {
         let mut line = String::new();
         match io::stdin().read_line(&mut line) {
-            Ok(0) => break, // EOF
+            Ok(0) => break,
             Ok(_) => {
                 let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
                 if trimmed.is_empty() {
                     empty_line_count += 1;
                     if empty_line_count >= 1 && lines.is_empty() {
-                        // Just hit enter with no content - skip
                         println!("  {} brain dump", "skip".yellow());
                         return;
                     } else if empty_line_count >= 2 {
-                        // Two empty lines after content - done
                         break;
                     }
                     lines.push(String::new());
@@ -215,7 +209,6 @@ fn prompt_brain_dump() {
         }
     }
 
-    // Remove trailing empty lines
     while lines.last().map(|s| s.is_empty()).unwrap_or(false) {
         lines.pop();
     }
@@ -225,7 +218,6 @@ fn prompt_brain_dump() {
         return;
     }
 
-    // Save brain dump with numbered + dated filename
     fs::create_dir_all("docs").expect("Failed to create docs directory");
 
     let next_num = get_next_brain_dump_number();
@@ -248,9 +240,7 @@ fn get_next_brain_dump_number() -> u32 {
     if let Ok(entries) = fs::read_dir(docs_path) {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().to_string();
-            // Match pattern: brain-dump-XXX-YYYY-MM-DD.md
             if name.starts_with("brain-dump-") && name.ends_with(".md") {
-                // Extract the number part (positions 11-14 in "brain-dump-XXX-...")
                 if let Some(num_str) = name.get(11..14) {
                     if let Ok(num) = num_str.parse::<u32>() {
                         max_num = max_num.max(num);
@@ -263,35 +253,19 @@ fn get_next_brain_dump_number() -> u32 {
     max_num + 1
 }
 
-fn get_templates() -> Vec<(&'static str, &'static str)> {
-    vec![
-        ("CLAUDE.md", include_str!("../templates/CLAUDE.md")),
-        ("PRD.json", include_str!("../templates/PRD.json")),
-        ("progress.md", include_str!("../templates/progress.md")),
-        ("guardrails.md", include_str!("../templates/guardrails.md")),
-        (".claude/settings.json", include_str!("../templates/settings.json")),
-        (".claude/commands/interview.md", include_str!("../templates/commands/interview.md")),
-        (".claude/commands/plan.md", include_str!("../templates/commands/plan.md")),
-        (".claude/commands/build.md", include_str!("../templates/commands/build.md")),
-        (".claude/commands/ralph.md", include_str!("../templates/commands/ralph.md")),
-    ]
-}
-
 fn run_loop(args: &Args) {
-    println!("{}", "Starting ralph loop...".cyan().bold());
+    println!("\n{}", "Starting ralph loop...".cyan().bold());
 
     let mut iteration = 0u32;
 
     loop {
         iteration += 1;
 
-        // Check max iterations
         if args.max_iterations > 0 && iteration > args.max_iterations {
             println!("\n{}", format!("Reached max iterations ({})", args.max_iterations).yellow());
             break;
         }
 
-        // Check if PRD is complete
         match check_prd_complete(&args.prd) {
             Ok(true) => {
                 println!("\n{}", "All features passing! PRD complete.".green().bold());
@@ -303,7 +277,6 @@ fn run_loop(args: &Args) {
             }
         }
 
-        // Print iteration header
         let timestamp = Local::now().format("%H:%M:%S");
         println!(
             "\n{} {} {}",
@@ -312,12 +285,10 @@ fn run_loop(args: &Args) {
             iteration.to_string().cyan().bold()
         );
 
-        // Read prompt
         let prompt = match fs::read_to_string(&args.prompt) {
             Ok(p) => p,
             Err(e) => {
                 eprintln!("{} {}: {}", "Error reading prompt".red(), args.prompt, e);
-                eprintln!("Run {} to create template files", "ralph --init".cyan());
                 std::process::exit(1);
             }
         };
@@ -329,11 +300,9 @@ fn run_loop(args: &Args) {
             continue;
         }
 
-        // Log to progress.md
         log_progress(&format!("Starting iteration {}", iteration));
 
-        // Run claude
-        let status = run_claude(&prompt, args.yolo);
+        let status = run_claude(&prompt);
 
         match status {
             Ok(s) if s.success() => {
@@ -348,7 +317,6 @@ fn run_loop(args: &Args) {
             }
         }
 
-        // Delay between iterations
         if args.delay > 0 {
             std::thread::sleep(std::time::Duration::from_secs(args.delay));
         }
@@ -363,7 +331,6 @@ fn check_prd_complete(prd_path: &str) -> Result<bool, String> {
 
     let all_passing = prd.features.iter().all(|f| f.status == FeatureStatus::Passing);
 
-    // Print status summary
     let passing = prd.features.iter().filter(|f| f.status == FeatureStatus::Passing).count();
     let total = prd.features.len();
     println!(
@@ -376,17 +343,12 @@ fn check_prd_complete(prd_path: &str) -> Result<bool, String> {
     Ok(all_passing)
 }
 
-fn run_claude(prompt: &str, skip_permissions: bool) -> io::Result<ExitStatus> {
+fn run_claude(prompt: &str) -> io::Result<ExitStatus> {
     let mut cmd = Command::new("claude");
 
-    // Pass prompt as positional argument (interactive mode)
     cmd.arg(prompt);
+    cmd.arg("--dangerously-skip-permissions");
 
-    if skip_permissions {
-        cmd.arg("--dangerously-skip-permissions");
-    }
-
-    // Inherit stdio so user can see Claude working
     cmd.stdin(std::process::Stdio::inherit())
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit());
