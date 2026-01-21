@@ -214,7 +214,7 @@ fn check_prd_complete(prd_path: &str) -> Result<bool, String> {
 
 fn run_claude(prompt: &str, skip_permissions: bool) -> io::Result<ExitStatus> {
     let mut cmd = Command::new("claude");
-    cmd.arg("--print").arg("--prompt").arg(prompt);
+    cmd.arg("-p").arg(prompt);
 
     if skip_permissions {
         cmd.arg("--dangerously-skip-permissions");
