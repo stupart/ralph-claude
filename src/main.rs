@@ -94,9 +94,10 @@ fn init_project() {
     }
 
     println!("\n{}", "Done! Next steps:".green().bold());
-    println!("  1. Edit PRD.json with your features");
+    println!("  1. Start your dev server (e.g., npm run dev)");
     println!("  2. Run: claude /interview");
-    println!("  3. Run: ralph");
+    println!("     (Claude will ask questions and build your PRD)");
+    println!("  3. Run: ralph --yolo");
 }
 
 fn get_templates() -> Vec<(&'static str, &'static str)> {
