@@ -7,17 +7,23 @@ This project uses the Ralph method for autonomous Claude Code execution. Read th
 Give Claude a way to verify its work - this 2-3x the quality of results.
 
 ### Web Apps
-Use `/chrome` to test UI changes. This launches a browser Claude can control:
+Use `/chrome` to test UI changes. This launches a browser Claude can control.
 
+First, check what port the dev server is running on:
+- Look at the terminal output from `npm run dev`
+- Or check `vite.config.ts` / `package.json` for port config
+- Common ports: 3000, 5173, 5180
+
+Then launch the browser:
 ```
-/chrome http://localhost:3000
+/chrome http://localhost:<PORT>
 ```
 
-Then instruct Claude to:
-- Click through the UI flow you just built
-- Verify elements render correctly
-- Test form submissions, error states, edge cases
-- Check that the UX feels right, not just "works"
+Verify by:
+- Clicking through the UI flow you just built
+- Checking elements render correctly
+- Testing form submissions, error states, edge cases
+- Confirming the UX feels right, not just "works"
 
 Don't rely only on unit tests - actually see the UI.
 
