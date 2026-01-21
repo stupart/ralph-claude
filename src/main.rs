@@ -72,7 +72,44 @@ fn main() {
         return;
     }
 
+    // Check if PRD is empty - if so, run interview first
+    if needs_interview(&args.prd) {
+        println!("{}", "PRD is empty. Starting interview...".cyan().bold());
+        run_interview(args.yolo);
+        println!("\n{}", "Interview complete. Starting build loop...".green().bold());
+    }
+
     run_loop(&args);
+}
+
+fn needs_interview(prd_path: &str) -> bool {
+    match fs::read_to_string(prd_path) {
+        Ok(content) => {
+            match serde_json::from_str::<Prd>(&content) {
+                Ok(prd) => prd.features.is_empty(),
+                Err(_) => true, // Can't parse, probably needs setup
+            }
+        }
+        Err(_) => true, // No PRD file, needs setup
+    }
+}
+
+fn run_interview(skip_permissions: bool) {
+    let interview_prompt = match fs::read_to_string(".claude/commands/interview.md") {
+        Ok(p) => p,
+        Err(_) => {
+            eprintln!("{}", "Error: .claude/commands/interview.md not found".red());
+            eprintln!("Run {} first", "ralph --init".cyan());
+            std::process::exit(1);
+        }
+    };
+
+    let status = run_claude(&interview_prompt, skip_permissions);
+
+    if let Err(e) = status {
+        eprintln!("{} {}", "Interview failed:".red(), e);
+        std::process::exit(1);
+    }
 }
 
 fn init_project() {
@@ -93,11 +130,12 @@ fn init_project() {
         }
     }
 
-    println!("\n{}", "Done! Next steps:".green().bold());
-    println!("  1. Start your dev server (e.g., npm run dev)");
-    println!("  2. Run: claude /interview");
-    println!("     (Claude will ask questions and build your PRD)");
-    println!("  3. Run: ralph --yolo");
+    println!("\n{}", "Done! Run:".green().bold());
+    println!("  ralph --yolo");
+    println!("\n{}", "This will:".dimmed());
+    println!("  1. Interview you about what to build");
+    println!("  2. Generate the PRD with features");
+    println!("  3. Execute the build loop until complete");
 }
 
 fn get_templates() -> Vec<(&'static str, &'static str)> {
