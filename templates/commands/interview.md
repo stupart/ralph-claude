@@ -18,15 +18,35 @@ Make sure the questions are NOT obvious. Be very in-depth. Ask about things I mi
 
 Continue interviewing until you have enough detail. Ask 20-50 questions if needed.
 
-## When complete:
+## When complete, update PRD.json with this exact structure:
 
-### 1. Update PRD.json
-- Set "project" to a descriptive name
-- F000: Project Setup (scaffold with chosen stack)
-- F001+: Features we discussed
-- Each feature needs: description, acceptance criteria, verification method
+```json
+{
+  "project": "Project Name",
+  "features": [
+    {
+      "id": "F000",
+      "name": "Project Setup",
+      "description": "Scaffold the project with chosen stack",
+      "status": "pending",
+      "acceptance_criteria": ["criterion 1", "criterion 2"]
+    },
+    {
+      "id": "F001",
+      "name": "Feature Name",
+      "description": "What this feature does",
+      "status": "pending",
+      "acceptance_criteria": ["criterion 1", "criterion 2"]
+    }
+  ]
+}
+```
 
-### 2. Save any important notes to `docs/`
-Only create docs if there's something worth capturing - architecture decisions, tricky implementation notes, etc. Don't create empty boilerplate. Knowledge grows as the project grows.
+**Important**: Use exactly these field names: `id`, `name`, `description`, `status`, `acceptance_criteria`
 
-The Ralph loop will execute features in order, starting with project setup.
+F000 should ALWAYS be project setup/scaffolding. Features F001+ are the actual functionality.
+
+## Optionally save notes to `docs/`
+Only if there's something worth capturing. Knowledge grows as the project grows.
+
+The Ralph loop will execute features in order, starting with F000.
