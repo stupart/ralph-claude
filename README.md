@@ -23,13 +23,16 @@ The key insight: **fresh context per iteration**, with state persisted to files 
 ## Install
 
 ```bash
+git clone https://github.com/stupart/ralph-claude.git
+cd ralph-claude
 cargo install --path .
 ```
 
-Or build from source:
+To update after pulling new changes:
 ```bash
-cargo build --release
-cp target/release/ralph /usr/local/bin/
+cd ~/ralph-claude
+git pull
+cargo install --path . --force
 ```
 
 ## Quick Start
