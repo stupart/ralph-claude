@@ -112,17 +112,50 @@ NOW create PRD.json. Each **Feature** in the PRD maps to a Feature (level 3) in 
 
 ---
 
-## Phase 5: Verification Checklist
+## Phase 5: User Journey Map (SOURCE OF TRUTH)
 
-Create `docs/verification.md` with specific test cases for each feature:
+Create `docs/user-journey.md` - this is THE definition of "done":
+
+```markdown
+# User Journeys
+
+These journeys define what "complete" means. The app is done when every journey works end-to-end.
+
+## Journey 1: [Primary Use Case]
+> One-line description of who and what
+
+1. User [action]
+2. System [response]
+3. User sees [result]
+4. User [next action]
+5. ...
+6. **End state**: [what success looks like]
+
+## Journey 2: [Secondary Use Case]
+...
+
+## Journey 3: [Edge Case / Error Path]
+...
+```
+
+**Every feature should map to at least one journey.** If a feature doesn't appear in any journey, question if it's needed.
+
+This is the ultimate test: can you walk through each journey and everything works?
+
+---
+
+## Phase 6: Verification Checklist
+
+Create `docs/verification.md` with specific test cases:
 
 ```markdown
 # Verification Checklist
 
 ## F001: [Feature Name]
-- [ ] Test case 1: [specific action] → [expected result]
-- [ ] Test case 2: [specific action] → [expected result]
+- [ ] Test case 1: [action] → [expected result]
+- [ ] Test case 2: [action] → [expected result]
 - [ ] Edge case: [what happens when X]
+- [ ] Journey coverage: [which journeys this enables]
 
 ## F002: [Feature Name]
 ...
@@ -135,6 +168,11 @@ Create `docs/verification.md` with specific test cases for each feature:
 After this interview, you should have created:
 1. `plan.md` - Hierarchical fractal breakdown (Epics → Features → Tasks → Subtasks)
 2. `PRD.json` - Features derived from plan, properly scoped
-3. `docs/verification.md` - Test cases for each feature
+3. `docs/user-journey.md` - **Source of truth** for what "done" means
+4. `docs/verification.md` - Test cases for each feature
 
-The Ralph loop will use plan.md for detailed guidance and PRD.json for status tracking.
+The Ralph loop will:
+- Use `plan.md` for detailed task guidance
+- Use `PRD.json` for status tracking
+- Use `docs/user-journey.md` to verify completeness
+- **CAN edit PRD.json** to add/split/refine features during development
