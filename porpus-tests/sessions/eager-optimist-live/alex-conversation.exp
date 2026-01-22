@@ -1,0 +1,106 @@
+#!/usr/bin/expect -f
+
+set timeout 120
+cd /Users/tylerstupart/ralph-claude/Porpus
+
+# Start Porpus with debug mode
+spawn env DEBUG=1 npm run dev
+
+# Wait for the name prompt
+expect {
+    "What should I call you?" {
+        sleep 1
+        send "I'm Alex! So excited to be here, I've been thinking about this for a while!\r"
+    }
+    "Welcome back" {
+        # If it says welcome back, we may need to handle differently
+        expect "You:"
+        sleep 1
+        send "I'm Alex! So excited to be here, I've been thinking about this for a while!\r"
+    }
+}
+
+# Exchange 2: What do you want?
+expect {
+    -re "What do you want|tangible stuff|achievements" {
+        sleep 1
+        send "Oh wow, I want so many things! A successful tech startup, definitely. And a beautiful house by the ocean - like with floor-to-ceiling windows. And I want to travel everywhere, at least 10 countries a year. And a loving family of course! Oh and financial freedom so I never have to worry about money again!\r"
+    }
+}
+
+# Exchange 3: Follow-up question
+expect {
+    "Porpus:" {
+        sleep 1
+        send "Yes absolutely! The startup would be in AI - specifically helping people with mental health. I've struggled with anxiety myself and I just know technology can help so many people! I picture myself as the CEO, leading an amazing team, making a real difference. The financial success would just be a bonus honestly!\r"
+    }
+}
+
+# Exchange 4
+expect {
+    "Porpus:" {
+        sleep 1
+        send "The ocean house is in Malibu or maybe somewhere in the Pacific Northwest! I love waking up to the sound of waves. My perfect morning would be yoga on the deck, then a healthy breakfast, then working on my startup from my home office with that incredible view. My family would be there too - I want 2 kids eventually!\r"
+    }
+}
+
+# Exchange 5
+expect {
+    "Porpus:" {
+        sleep 1
+        send "Travel is huge for me! I want to experience different cultures, eat amazing food, see the world's natural wonders. Japan, New Zealand, Iceland, Peru, Italy, Greece, Thailand, South Africa, Norway, Patagonia - there's so much I want to see! And I want to bring my future kids on these adventures too!\r"
+    }
+}
+
+# Exchange 6
+expect {
+    "Porpus:" {
+        sleep 1
+        send "Financial freedom means never worrying about bills or unexpected expenses. I'd say around 10 million dollars would give me that security. But it's not about the money itself - it's about the freedom to pursue my passions, help my family, and give back to causes I care about!\r"
+    }
+}
+
+# Exchange 7
+expect {
+    "Porpus:" {
+        sleep 1
+        send "Family is everything! I want a partner who shares my values - someone ambitious but also caring and present. We'd raise our kids to be curious, kind, and adventurous. Sunday dinners together, vacations, traditions - the whole thing! My parents sacrificed so much for me and I want to give my kids even more!\r"
+    }
+}
+
+# Exchange 8
+expect {
+    "Porpus:" {
+        sleep 1
+        send "Oh the startup helping people with mental health - that's my WHY. I've seen friends struggle with depression and anxiety. Traditional therapy is too expensive and hard to access. I want to create an AI companion that can help people anytime, anywhere. Like a supportive friend in your pocket that actually understands you!\r"
+    }
+}
+
+# Exchange 9
+expect {
+    "Porpus:" {
+        sleep 1
+        send "Success to me means waking up excited every day, surrounded by people I love, doing work that matters, with the resources to live comfortably and help others. It's about impact and fulfillment, not just achievements. I want to look back at 80 and feel like I really LIVED, you know?\r"
+    }
+}
+
+# Exchange 10 - might get DITL here
+expect {
+    "Porpus:" {
+        sleep 1
+        send "This is AMAZING! You totally captured what I'm going for! I love how you've woven everything together. The only thing I'd add is maybe a bit more about the community aspect - I want to be part of a larger movement of people changing the world. But honestly this is so good, thank you!\r"
+    }
+}
+
+# Final exchange and exit
+expect {
+    "Porpus:" {
+        sleep 2
+        send "exit\r"
+    }
+    timeout {
+        send "exit\r"
+    }
+}
+
+expect eof
