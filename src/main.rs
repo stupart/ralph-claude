@@ -176,7 +176,7 @@ fn get_templates() -> Vec<(&'static str, &'static str)> {
 
 fn prompt_brain_dump() {
     println!("\n{}", "Brain dump?".cyan().bold());
-    print!("{}", "Do you have context to paste? (y/n): ".dimmed());
+    print!("{}", "Do you have context to add? (y/n): ".dimmed());
     io::stdout().flush().unwrap();
 
     let mut answer = String::new();
@@ -191,20 +191,60 @@ fn prompt_brain_dump() {
         return;
     }
 
-    println!("{}", "Paste your content, then press Ctrl+D (Mac/Linux) or Ctrl+Z Enter (Windows) when done:".dimmed());
+    // Create temp file with template
+    let temp_path = std::env::temp_dir().join("ralph-brain-dump.md");
+    let template = "# Brain Dump\n\n<!-- Paste or write your context below. Save and close when done. -->\n<!-- Delete all content (including these comments) to skip. -->\n\n";
+    fs::write(&temp_path, template).expect("Failed to create temp file");
 
-    let mut content = String::new();
-    loop {
-        let mut line = String::new();
-        match io::stdin().read_line(&mut line) {
-            Ok(0) => break, // EOF (Ctrl+D)
-            Ok(_) => content.push_str(&line),
-            Err(_) => break,
-        }
+    // Get editor from env, fallback to common editors
+    let editor = std::env::var("EDITOR")
+        .or_else(|_| std::env::var("VISUAL"))
+        .unwrap_or_else(|_| {
+            // Check what's available
+            if Command::new("code").arg("--version").output().is_ok() {
+                "code --wait".to_string()
+            } else if Command::new("nano").arg("--version").output().is_ok() {
+                "nano".to_string()
+            } else if Command::new("vim").arg("--version").output().is_ok() {
+                "vim".to_string()
+            } else {
+                "vi".to_string()
+            }
+        });
+
+    println!("{}", format!("Opening editor ({})...", editor.split_whitespace().next().unwrap_or("editor")).dimmed());
+
+    // Parse editor command (handle "code --wait" style)
+    let parts: Vec<&str> = editor.split_whitespace().collect();
+    let (cmd, args) = parts.split_first().unwrap_or((&"vi", &[]));
+
+    let status = Command::new(cmd)
+        .args(args.iter())
+        .arg(&temp_path)
+        .stdin(std::process::Stdio::inherit())
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .status();
+
+    if status.is_err() || !status.unwrap().success() {
+        println!("  {} brain dump (editor failed)", "skip".yellow());
+        let _ = fs::remove_file(&temp_path);
+        return;
     }
 
+    // Read content back
+    let content = fs::read_to_string(&temp_path).unwrap_or_default();
+    let _ = fs::remove_file(&temp_path);
+
+    // Strip template comments and check if empty
+    let content: String = content
+        .lines()
+        .filter(|line| !line.trim().starts_with("<!--") || !line.trim().ends_with("-->"))
+        .collect::<Vec<_>>()
+        .join("\n");
     let content = content.trim();
-    if content.is_empty() {
+
+    if content.is_empty() || content == "# Brain Dump" {
         println!("  {} brain dump (empty)", "skip".yellow());
         return;
     }
@@ -217,7 +257,7 @@ fn prompt_brain_dump() {
 
     let file_content = format!("# Brain Dump #{:03}\n\nCaptured: {}\n\n---\n\n{}\n", next_num, date, content);
     fs::write(&filename, &file_content).expect("Failed to write brain dump");
-    println!("\n  {} {}", "create".green(), filename);
+    println!("  {} {}", "create".green(), filename);
 }
 
 fn get_next_brain_dump_number() -> u32 {
