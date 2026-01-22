@@ -176,45 +176,36 @@ fn get_templates() -> Vec<(&'static str, &'static str)> {
 
 fn prompt_brain_dump() {
     println!("\n{}", "Brain dump?".cyan().bold());
-    println!("{}", "(Paste any context, ideas, links, references - press Enter twice when done, or just Enter to skip)".dimmed());
-    print!("> ");
+    print!("{}", "Do you have context to paste? (y/n): ".dimmed());
     io::stdout().flush().unwrap();
 
-    let mut lines: Vec<String> = Vec::new();
-    let mut empty_line_count = 0;
+    let mut answer = String::new();
+    if io::stdin().read_line(&mut answer).is_err() {
+        println!("  {} brain dump", "skip".yellow());
+        return;
+    }
 
+    let answer = answer.trim().to_lowercase();
+    if answer != "y" && answer != "yes" {
+        println!("  {} brain dump", "skip".yellow());
+        return;
+    }
+
+    println!("{}", "Paste your content, then press Ctrl+D (Mac/Linux) or Ctrl+Z Enter (Windows) when done:".dimmed());
+
+    let mut content = String::new();
     loop {
         let mut line = String::new();
         match io::stdin().read_line(&mut line) {
-            Ok(0) => break,
-            Ok(_) => {
-                let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
-                if trimmed.is_empty() {
-                    empty_line_count += 1;
-                    if empty_line_count >= 1 && lines.is_empty() {
-                        println!("  {} brain dump", "skip".yellow());
-                        return;
-                    } else if empty_line_count >= 2 {
-                        break;
-                    }
-                    lines.push(String::new());
-                } else {
-                    empty_line_count = 0;
-                    lines.push(trimmed.to_string());
-                }
-                print!("> ");
-                io::stdout().flush().unwrap();
-            }
+            Ok(0) => break, // EOF (Ctrl+D)
+            Ok(_) => content.push_str(&line),
             Err(_) => break,
         }
     }
 
-    while lines.last().map(|s| s.is_empty()).unwrap_or(false) {
-        lines.pop();
-    }
-
-    if lines.is_empty() {
-        println!("  {} brain dump", "skip".yellow());
+    let content = content.trim();
+    if content.is_empty() {
+        println!("  {} brain dump (empty)", "skip".yellow());
         return;
     }
 
@@ -224,9 +215,9 @@ fn prompt_brain_dump() {
     let date = Local::now().format("%Y-%m-%d");
     let filename = format!("docs/brain-dump-{:03}-{}.md", next_num, date);
 
-    let content = format!("# Brain Dump #{:03}\n\nCaptured: {}\n\n---\n\n{}\n", next_num, date, lines.join("\n"));
-    fs::write(&filename, content).expect("Failed to write brain dump");
-    println!("  {} {}", "create".green(), filename);
+    let file_content = format!("# Brain Dump #{:03}\n\nCaptured: {}\n\n---\n\n{}\n", next_num, date, content);
+    fs::write(&filename, &file_content).expect("Failed to write brain dump");
+    println!("\n  {} {}", "create".green(), filename);
 }
 
 fn get_next_brain_dump_number() -> u32 {
