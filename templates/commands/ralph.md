@@ -45,13 +45,31 @@ Cross-reference with `PRD.json` to see which feature this subtask belongs to.
    - CLI: run the command, verify output
    - API: curl endpoints, check responses
 4. **Mark complete** in plan.md: `- [ ]` → `- [x]`
-5. **Commit** with message referencing the subtask
+5. **Commit immediately** (don't batch):
+   ```
+   git add -A && git commit -m "subtask: [1.2.3] description of what was done"
+   ```
 6. **Update progress.md** with what you did
+
+## Commit Discipline
+
+**Every change gets committed.** This creates a revertible history:
+- Subtask done → commit with `subtask: [ref]` prefix
+- Feature done → commit with `feature: [F00X]` prefix + tag
+- Bug fix during work → commit with `fix:` prefix
+- Plan/PRD update → commit with `docs:` prefix
+
+**Never batch multiple changes into one commit.** If something breaks, you can revert to the last working state.
 
 ## After Completing All Subtasks in a Feature
 
 When ALL subtasks under a Feature are `[x]`:
 1. Run verification tests from `docs/verification.md`
+2. Create a milestone commit and tag:
+   ```
+   git add -A && git commit -m "feature: [F00X] Feature Name complete"
+   git tag F00X-complete
+   ```
 2. Walk through relevant user journeys in `docs/user-journey.md`
 3. If all pass, update `PRD.json`: change status to `"passing"`
 4. Move to the next Feature
