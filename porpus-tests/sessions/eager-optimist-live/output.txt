@@ -1,0 +1,142 @@
+spawn env DEBUG=1 npm run dev
+
+> porpus@0.1.0 dev
+> tsx src/index.ts
+
+[1G[0KDatabase initialized: /Users/tylerstupart/ralph-claude/Porpus/data/porpus.db
+
+[DEBUG MODE] Logging to data/debug.log - use `tail -f data/debug.log` in another terminal
+
+
+=== Porpus - Your Life Purpose Guide ===
+
+
+Porpus: Let's figure out what you actually want. Then go get it.
+
+What should I call you?
+
+[1G[0JYou: [6G[31m(node:18054) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)[39m
+I'm Alex! So excited to be here, I've been thinking about this for a while!
+
+Porpus: Good to meet you, Alex.
+
+What do you want to have or do in your life? The tangible stuff—achievements, experiences, possessions, whatever pulls at you.
+
+[1G[0JYou: [6GOh wow, I want so many things! A successful tech startup, definitely. And a beautiful house by the ocean - like with floor-to-ceiling windows. And I want to travel everywhere, at least 10 countries a year. And a loving family of course! Oh and financial freedom so I never have to worry about money again!
+
+Porpus: I made you something. Read it slowly:
+
+---
+
+*January 15, 2030*
+
+I wake up to the sound of waves. Not an app, not a recording—actual waves rolling onto the shore maybe fifty feet from our bedroom. The morning light is doing that thing it does here, spilling through the floor-to-ceiling windows and turning everything golden. Sofia is still asleep, her hair fanned across the pillow. I watch her breathe for a moment before slipping out.
+
+The house is quiet. I pad barefoot across the warm concrete floors to the kitchen, start the espresso machine, and check my phone out of habit. A message from my COO: "Series C docs ready for your review. No rush—enjoy Portugal." I smile. Three years ago I would've been on a call by now, panic-scrolling through Slack. Now I have a team I trust. The company runs whether I'm there or not.
+
+I take my coffee out to the deck. The ocean stretches out forever, steel-blue and restless. We bought this place eighteen months ago—Ericeira, Portugal, an hour north of Lisbon. The surf town vibe, the light, the way time moves differently here. Sofia called it "aggressively peaceful" and she wasn't wrong.
+
+By 8, the kids are up. Mia, four, wants pancakes. Leo, two, wants whatever Mia wants. I make a mess of the kitchen and nobody cares. We eat on the deck, seagulls circling, Leo throwing blueberries at them while Sofia pretends not to notice.
+
+Late morning, I take a call with our head of product—forty-five minutes, max. We're piloting in Southeast Asia now, and there are decisions only I can make. But just a few. I've learned that hoarding decisions is how founders burn out. I give my input, trust her judgment, and hang up.
+
+Afternoon: we drive into Lisbon. There's a new exhibit at MAAT that Sofia's been talking about for weeks. The kids stay with Maria, our part-time nanny, and we wander through the galleries like we used to wander through Brooklyn before everything changed. We get wine at a tiny bar in Alfama. We talk about next month—Tokyo, then New Zealand. Ten countries this year, easy. Probably twelve.
+
+Dinner is grilled fish from the market, eaten outside as the sun drops into the Atlantic. Mia asks why the sky turns pink. I don't give her the scientific answer. I just say, "Because it's showing off."
+
+Later, after the kids are down, I sit on the deck alone. The stars here are absurd—you forget how many there are when you live in cities. I think about the person I was five years ago, hungry and anxious and desperate to prove something. I don't feel that desperation anymore. The startup worked. The money came. But more than that—I built a life I don't need a vacation from.
+
+The waves keep rolling in. I finish my drink, go inside, and climb into bed next to Sofia.
+
+Tomorrow we might surf. Or we might not. That's the whole point.
+
+---
+
+How did that feel to read?
+---
+
+**A Day in Your Future Life**
+
+I wake up to the sound of waves. Not an app, not a recording—actual waves rolling onto the shore maybe fifty feet from our bedroom. The morning light is doing that thing it does here, spilling through the floor-to-ceiling windows and turning everything golden. Sofia is still asleep, her hair fanned across the pillow. I watch her breathe for a moment before slipping out.
+
+The house is quiet. I pad barefoot across the warm concrete floors to the kitchen, start the espresso machine, and check my phone out of habit. A message from my COO: "Series C docs ready for your review. No rush—enjoy Portugal." I smile. Three years ago I would've been on a call by now, panic-scrolling through Slack. Now I have a team I trust. The company runs whether I'm there or not.
+
+I take my coffee out to the deck. The ocean stretches out forever, steel-blue and restless. We bought this place eighteen months ago—Ericeira, Portugal, an hour north of Lisbon. The surf town vibe, the light, the way time moves differently here. Sofia called it "aggressively peaceful" and she wasn't wrong.
+
+By 8, the kids are up. Mia, four, wants pancakes. Leo, two, wants whatever Mia wants. I make a mess of the kitchen and nobody cares. We eat on the deck, seagulls circling, Leo throwing blueberries at them while Sofia pretends not to notice.
+
+Late morning, I take a call with our head of product—forty-five minutes, max. We're piloting in Southeast Asia now, and there are decisions only I can make. But just a few. I've learned that hoarding decisions is how founders burn out. I give my input, trust her judgment, and hang up.
+
+Afternoon: we drive into Lisbon. There's a new exhibit at MAAT that Sofia's been talking about for weeks. The kids stay with Maria, our part-time nanny, and we wander through the galleries like we used to wander through Brooklyn before everything changed. We get wine at a tiny bar in Alfama. We talk about next month—Tokyo, then New Zealand. Ten countries this year, easy. Probably twelve.
+
+Dinner is grilled fish from the market, eaten outside as the sun drops into the Atlantic. Mia asks why the sky turns pink. I don't give her the scientific answer. I just say, "Because it's showing off."
+
+Later, after the kids are down, I sit on the deck alone. The stars here are absurd—you forget how many there are when you live in cities. I think about the person I was five years ago, hungry and anxious and desperate to prove something. I don't feel that desperation anymore. The startup worked. The money came. But more than that—I built a life I don't need a vacation from.
+
+The waves keep rolling in. I finish my drink, go inside, and climb into bed next to Sofia.
+
+Tomorrow we might surf. Or we might not. That's the whole point.
+
+---
+
+
+[1G[0JYou: [6GYes absolutely! The startup would be in AI - specifically helping people with mental health. I've struggled with anxiety myself and I just know technology can help so many people! I picture myself as the CEO, leading an amazing team, making a real difference. The financial success would just be a bonus honestly!
+
+Porpus: That's a big shift—from "financial freedom so I never have to worry" to "the financial success would just be a bonus."
+
+Which is closer to the truth?
+
+[1G[0JYou: [6GThe ocean house is in Malibu or maybe somewhere in the Pacific Northwest! I love waking up to the sound of waves. My perfect morning would be yoga on the deck, then a healthy breakfast, then working on my startup from my home office with that incredible view. My family would be there too - I want 2 kids eventually!
+
+Porpus: You skipped my question.
+
+You said financial freedom was essential, then called it "just a bonus." Which is it—and what's behind that tension?
+
+[1G[0JYou: [6GTravel is huge for me! I want to experience different cultures, eat amazing food, see the world's natural wonders. Japan, New Zealand, Iceland, Peru, Italy, Greece, Thailand, South Africa, Norway, Patagonia - there's so much I want to see! And I want to bring my future kids on these adventures too!
+
+Porpus: Alex, you've dodged this twice now.
+
+Financial freedom as a *need* vs. a *bonus*—that's not a small distinction. What's actually going on there?
+
+[1G[0JYou: [6GFinancial freedom means never worrying about bills or unexpected expenses. I'd say around 10 million dollars would give me that security. But it's not about the money itself - it's about the freedom to pursue my passions, help my family, and give back to causes I care about!
+
+Porpus: So money isn't the goal—it's the *permission slip* for the life you actually want.
+
+What would you do differently right now if you already had that permission?
+
+[1G[0JYou: [6GFamily is everything! I want a partner who shares my values - someone ambitious but also caring and present. We'd raise our kids to be curious, kind, and adventurous. Sunday dinners together, vacations, traditions - the whole thing! My parents sacrificed so much for me and I want to give my kids even more!
+
+Porpus: You've painted a vivid picture. But I notice you keep adding to the vision instead of going deeper into it.
+
+What scares you about this future not working out?
+
+[1G[0JYou: [6GOh the startup helping people with mental health - that's my WHY. I've seen friends struggle with depression and anxiety. Traditional therapy is too expensive and hard to access. I want to create an AI companion that can help people anytime, anywhere. Like a supportive friend in your pocket that actually understands you!
+
+Porpus: Now we're somewhere real.
+
+You mentioned you've struggled with anxiety yourself. If that AI companion had existed for you back then—what would it have needed to say or do?
+
+[1G[0JYou: [6GSuccess to me means waking up excited every day, surrounded by people I love, doing work that matters, with the resources to live comfortably and help others. It's about impact and fulfillment, not just achievements. I want to look back at 80 and feel like I really LIVED, you know?
+
+Porpus: Alex, that's the fourth question you've sidestepped.
+
+I asked what that AI companion would have needed to say to *you* during your anxiety. You gave me a definition of success instead.
+
+What are you avoiding?
+
+[1G[0JYou: [6GThis is AMAZING! You totally captured what I'm going for! I love how you've woven everything together. The only thing I'd add is maybe a bit more about the community aspect - I want to be part of a larger movement of people changing the world. But honestly this is so good, thank you!
+
+Porpus: I appreciate that, Alex. But I want to be honest with you.
+
+You've given me a beautiful vision—ocean house, startup, travel, family. And you've dodged every question that asks you to go *beneath* it.
+
+What the AI would've said to anxious-you. Whether money is a need or a bonus. What scares you about this not working out.
+
+That pattern is worth noticing. What do you think is there?
+
+[1G[0JYou: [6Gexit
+
+Goodbye! Your progress has been saved.
+
+[1G[0K⠙[1G[0K

@@ -1,51 +1,85 @@
-## Pre-Interview: Brain Dump Analysis
+## Phase 1: Brain Dump Analysis
 
 First, check if any brain dump files exist in `docs/` (pattern: `brain-dump-*.md`). If they do:
 
-1. Read it thoroughly
+1. Read ALL of them thoroughly
 2. Use the Task tool with subagent_type=Explore to deeply analyze any links, references, or technical concepts mentioned
-3. Apply chain-of-density summarization to extract:
+3. Extract and internalize:
    - Core requirements and goals
    - Implicit constraints and preferences
    - Technical decisions already made
    - Anti-patterns or things to avoid
-   - Questions or ambiguities to clarify
-4. Keep these insights in mind - they inform your interview questions
+   - Scope and scale of the project
 
-If there's an existing codebase (files beyond ralph templates), also analyze:
-- Project structure and tech stack
-- Existing patterns and conventions
-- What's already built vs what needs to be added
+If there's an existing codebase, also analyze project structure, patterns, and what exists vs what's needed.
 
 ---
 
-## Interview
+## Phase 2: Interview
 
-Now interview me about what I want to build using AskUserQuestionTool.
+Interview me using AskUserQuestionTool.
 
-### Start with the basics:
-1. What are we building? (app, CLI, API, library, etc.)
-2. What tech stack? (React, Expo, Next.js, Rust, Python, etc.)
+**Start with basics** (skip if answered in brain dump):
+1. What are we building?
+2. What tech stack?
 3. What's the core functionality?
+4. What's the rough scope? (weekend project, week, month?)
 
-Skip questions already answered in the brain dump.
-
-### Then go deeper:
-- Technical implementation details
-- UI & UX decisions (if applicable)
+**Go deep:**
+- Every user-facing feature
+- Every technical component
+- Data models and relationships
+- API contracts if applicable
+- UI flows and screens
 - Edge cases and error handling
-- Performance considerations
-- Security concerns
-- Tradeoffs and constraints
-- How to verify each feature works
+- Performance requirements
+- Security considerations
+- Integration points
+- Deployment/infrastructure
 
-Make sure the questions are NOT obvious. Be very in-depth. Ask about things I might not have considered.
-
-Continue interviewing until you have enough detail. Ask 20-50 questions if needed.
+**Keep asking until you have a complete mental model.** 30-50+ questions for larger projects.
 
 ---
 
-## When complete, update PRD.json with this exact structure:
+## Phase 3: Hierarchical Planning (CRITICAL)
+
+Before creating the PRD, create a detailed `plan.md` with FRACTAL BREAKDOWN.
+
+Break down recursively until each leaf task is ~15-30 mins of work:
+
+```markdown
+# Project Plan: [Name]
+
+## Epic 1: [Major Area]
+### Feature 1.1: [Feature Name]
+#### Task 1.1.1: [Task]
+- [ ] Subtask 1.1.1.1: [Atomic step]
+- [ ] Subtask 1.1.1.2: [Atomic step]
+#### Task 1.1.2: [Task]
+- [ ] Subtask 1.1.2.1: [Atomic step]
+...
+
+## Epic 2: [Major Area]
+### Feature 2.1: [Feature Name]
+...
+```
+
+**Rules for breakdown:**
+- Epics = major functional areas (auth, payments, dashboard, etc.)
+- Features = user-visible capabilities within an epic
+- Tasks = technical work to implement a feature
+- Subtasks = atomic steps (~15-30 min each)
+- Keep going until subtasks are concrete and actionable
+- Include setup, testing, and verification as explicit tasks
+- Order by dependencies (what must come first)
+
+**Estimate total scope.** If it's a 10-hour project, you should have ~20-40 subtasks.
+
+---
+
+## Phase 4: Generate PRD from Plan
+
+NOW create PRD.json. Each **Feature** in the PRD maps to a Feature (level 3) in the plan:
 
 ```json
 {
@@ -54,26 +88,53 @@ Continue interviewing until you have enough detail. Ask 20-50 questions if neede
     {
       "id": "F000",
       "name": "Project Setup",
-      "description": "Scaffold the project with chosen stack",
+      "description": "Initialize project with [stack]",
       "status": "pending",
-      "acceptance_criteria": ["criterion 1", "criterion 2"]
+      "acceptance_criteria": ["builds without errors", "dev server runs"],
+      "plan_ref": "1.1"
     },
     {
       "id": "F001",
-      "name": "Feature Name",
-      "description": "What this feature does",
+      "name": "Feature from plan",
+      "description": "What it does",
       "status": "pending",
-      "acceptance_criteria": ["criterion 1", "criterion 2"]
+      "acceptance_criteria": ["criterion 1", "criterion 2"],
+      "plan_ref": "1.2"
     }
   ]
 }
 ```
 
-**Important**: Use exactly these field names: `id`, `name`, `description`, `status`, `acceptance_criteria`
+**Important:**
+- `plan_ref` links to the section in plan.md
+- PRD features should be granular - if a feature has 10+ subtasks, split it
+- Aim for 10-20+ features for a 10hr project, not 5-6
 
-F000 should ALWAYS be project setup/scaffolding. Features F001+ are the actual functionality.
+---
 
-## Optionally save notes to `docs/`
-Only if there's something worth capturing. Knowledge grows as the project grows.
+## Phase 5: Verification Checklist
 
-The Ralph loop will execute features in order, starting with F000.
+Create `docs/verification.md` with specific test cases for each feature:
+
+```markdown
+# Verification Checklist
+
+## F001: [Feature Name]
+- [ ] Test case 1: [specific action] → [expected result]
+- [ ] Test case 2: [specific action] → [expected result]
+- [ ] Edge case: [what happens when X]
+
+## F002: [Feature Name]
+...
+```
+
+---
+
+## Summary
+
+After this interview, you should have created:
+1. `plan.md` - Hierarchical fractal breakdown (Epics → Features → Tasks → Subtasks)
+2. `PRD.json` - Features derived from plan, properly scoped
+3. `docs/verification.md` - Test cases for each feature
+
+The Ralph loop will use plan.md for detailed guidance and PRD.json for status tracking.
