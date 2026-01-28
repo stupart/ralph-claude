@@ -11,7 +11,7 @@ pub mod status;
 pub mod layers;
 pub mod prompts;
 pub mod init;
-// pub mod reviewer;  // TODO: implement
+pub mod reviewer;
 // pub mod session;   // TODO: implement
 // pub mod git_ops;   // TODO: implement
 
