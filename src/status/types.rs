@@ -298,4 +298,18 @@ impl ProjectStatus {
             self.log(&format!("Rolled back to Layer {}: {} - {}", target_num, target.name(), reason));
         }
     }
+
+    /// Alias for log - add entry to history
+    pub fn add_history(&mut self, action: &str) {
+        self.log(action);
+        self.last_updated = Utc::now();
+    }
+
+    /// Alias for complete_layer - mark a specific layer as complete
+    pub fn mark_layer_complete(&mut self, layer: Layer) {
+        let layer_idx = layer as usize - 1;
+        if layer_idx < self.layer_progress.len() {
+            self.layer_progress[layer_idx].complete = true;
+        }
+    }
 }

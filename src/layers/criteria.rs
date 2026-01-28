@@ -21,18 +21,34 @@ pub fn is_input_complete(project_path: &Path) -> bool {
         return false;
     }
 
-    // Check for at least one brain dump or substantial content
-    let has_content = fs::read_dir(&input_path)
+    // Check for at least one brain dump markdown file (not .gitkeep)
+    let has_brain_dump = fs::read_dir(&input_path)
         .map(|entries| {
             entries.filter_map(|e| e.ok())
                 .any(|e| {
                     let name = e.file_name().to_string_lossy().to_string();
-                    name.ends_with(".md") || e.path().is_dir()
+                    name.ends_with(".md") && name != ".gitkeep" && !name.starts_with(".")
                 })
         })
         .unwrap_or(false);
 
-    has_content
+    // Also check research folder for content
+    let research_path = input_path.join("research");
+    let has_research = if research_path.exists() {
+        fs::read_dir(&research_path)
+            .map(|entries| {
+                entries.filter_map(|e| e.ok())
+                    .any(|e| {
+                        let name = e.file_name().to_string_lossy().to_string();
+                        name.ends_with(".md") && name != ".gitkeep"
+                    })
+            })
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
+    has_brain_dump || has_research
 }
 
 /// Check if Layer 2 (Decomposition) is complete
