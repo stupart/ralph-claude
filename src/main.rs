@@ -405,6 +405,9 @@ fn run_v3_loop(args: &Args, project_path: &Path) {
 
         let result = run_claude(&prompt);
 
+        // Remember the layer before Claude ran
+        let layer_before = status.current_layer;
+
         match result {
             Ok(exit_status) if exit_status.success() => {
                 // Reload status (Claude may have updated it)
@@ -423,8 +426,30 @@ fn run_v3_loop(args: &Args, project_path: &Path) {
             }
         }
 
-        // Handle layer transitions based on next action
-        handle_transitions(&mut status, &next_action, project_path);
+        // Only handle transitions if Claude didn't already change the layer
+        // This prevents double-advancing when Claude updates status itself
+        if status.current_layer == layer_before {
+            handle_transitions(&mut status, &next_action, project_path);
+        } else {
+            // Claude advanced the layer - validate the advancement
+            let validated = validate_layer_advancement(layer_before, status.current_layer, project_path);
+            if validated {
+                println!("{} L{}: {} (by Claude)", "→ Advanced to".green(),
+                    status.current_layer as u8, status.current_layer.name());
+            } else {
+                // Claude skipped ahead without creating required artifacts
+                // Roll back to the correct layer
+                let correct_layer = find_first_incomplete_layer(project_path, layer_before);
+                if correct_layer != status.current_layer {
+                    println!("{} Claude skipped to L{}, but L{} is incomplete",
+                        "⚠ Correcting:".yellow(),
+                        status.current_layer as u8,
+                        correct_layer as u8);
+                    status.current_layer = correct_layer;
+                    let _ = save_status(project_path, &status);
+                }
+            }
+        }
 
         if args.delay > 0 {
             std::thread::sleep(std::time::Duration::from_secs(args.delay));
@@ -483,6 +508,61 @@ fn handle_transitions(status: &mut ProjectStatus, action: &NextAction, project_p
         }
         _ => {}
     }
+}
+
+/// Validate that all layers between from and to are actually complete
+fn validate_layer_advancement(from: Layer, to: Layer, project_path: &Path) -> bool {
+    use ralph::layers::criteria;
+
+    let from_num = from as u8;
+    let to_num = to as u8;
+
+    // Check each layer from `from` up to (but not including) `to`
+    for layer_num in from_num..to_num {
+        let complete = match layer_num {
+            1 => criteria::is_input_complete(project_path),
+            2 => criteria::is_decomposition_complete(project_path),
+            3 => criteria::is_synthesis_complete(project_path),
+            4 => criteria::is_outline_complete(project_path),
+            // Layers 5-10 have more complex criteria, trust Claude for now
+            _ => true,
+        };
+
+        if !complete {
+            return false;
+        }
+    }
+
+    true
+}
+
+/// Find the first layer that is not complete, starting from a given layer
+fn find_first_incomplete_layer(project_path: &Path, start_from: Layer) -> Layer {
+    use ralph::layers::criteria;
+
+    let start_num = start_from as u8;
+
+    for layer_num in start_num..=10 {
+        let complete = match layer_num {
+            1 => criteria::is_input_complete(project_path),
+            2 => criteria::is_decomposition_complete(project_path),
+            3 => criteria::is_synthesis_complete(project_path),
+            4 => criteria::is_outline_complete(project_path),
+            5 => criteria::get_next_unplanned_chunk(project_path).is_none()
+                && criteria::has_chunks_to_implement(project_path),
+            8 => criteria::is_integration_complete(project_path),
+            10 => criteria::is_analysis_complete(project_path),
+            // For implementation and review layers, check if there's work to do
+            6 | 7 | 9 => false, // These need more complex checks
+            _ => false,
+        };
+
+        if !complete {
+            return Layer::from_number(layer_num).unwrap_or(start_from);
+        }
+    }
+
+    Layer::Analysis
 }
 
 /// Run Claude with the given prompt

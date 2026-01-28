@@ -3,7 +3,7 @@
 //! Handles determining what action to take based on current layer,
 //! checking completion criteria, and managing transitions.
 
-mod criteria;
+pub mod criteria;
 mod transitions;
 
 pub use criteria::*;
