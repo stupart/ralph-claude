@@ -627,3 +627,98 @@ describe('Ralph timing integration', () => {
     expect(summary.totalDurationMs).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('Ralph cascade depth limit', () => {
+  test('cascade depth starts at 0', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    expect(ralph._cascadeDepth).toBe(0);
+  });
+
+  test('cascade depth increments on ITERATE', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, maxCascadeDepth: 10 });
+    await ralph.initialize();
+    await seedProjectArtifacts(testDir);
+
+    ralph.state.state.position.layer = 'L9';
+    ralph.state.state.gates.L3 = { status: 'approved' };
+    ralph.state.state.gates.L7 = { status: 'approved' };
+    await ralph.state.write();
+
+    await ralph.onLayerComplete('L9', {
+      reviewResult: { verdict: 'ITERATE', issues: [{ title: 'Fix', severity: 'MINOR' }] }
+    });
+
+    expect(ralph._cascadeDepth).toBe(1);
+  });
+
+  test('cascade depth resets on PASS', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+    await seedProjectArtifacts(testDir);
+
+    ralph._cascadeDepth = 3;
+
+    ralph.state.state.position.layer = 'L9';
+    ralph.state.state.gates.L3 = { status: 'approved' };
+    ralph.state.state.gates.L7 = { status: 'approved' };
+    await ralph.state.write();
+
+    await ralph.onLayerComplete('L9', {
+      reviewResult: { verdict: 'PASS', issues: [] }
+    });
+
+    expect(ralph._cascadeDepth).toBe(0);
+  });
+
+  test('escalates to human when cascade depth exceeds limit', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, maxCascadeDepth: 2 });
+    await ralph.initialize();
+    await seedProjectArtifacts(testDir);
+
+    ralph._cascadeDepth = 1; // Already at 1, limit is 2
+
+    ralph.state.state.position.layer = 'L9';
+    ralph.state.state.gates.L3 = { status: 'approved' };
+    ralph.state.state.gates.L7 = { status: 'approved' };
+    await ralph.state.write();
+
+    const result = await ralph.onLayerComplete('L9', {
+      reviewResult: { verdict: 'ITERATE', issues: [{ title: 'Fix', severity: 'MINOR' }] }
+    });
+
+    expect(result.status).toBe('human_required');
+    expect(result.cascadeDepth).toBe(2);
+    expect(result.reason).toContain('Cascade depth limit');
+  });
+
+  test('default maxCascadeDepth is 5', () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    expect(ralph.options.maxCascadeDepth).toBe(5);
+  });
+
+  test('custom maxCascadeDepth is respected', () => {
+    const ralph = new Ralph(testDir, { verbose: false, maxCascadeDepth: 3 });
+    expect(ralph.options.maxCascadeDepth).toBe(3);
+  });
+
+  test('fires onError event when cascade depth exceeded', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, maxCascadeDepth: 1 });
+    await ralph.initialize();
+    await seedProjectArtifacts(testDir);
+
+    const errors = [];
+    ralph.on('onError', (data) => errors.push(data));
+
+    ralph.state.state.position.layer = 'L9';
+    ralph.state.state.gates.L3 = { status: 'approved' };
+    ralph.state.state.gates.L7 = { status: 'approved' };
+    await ralph.state.write();
+
+    await ralph.onLayerComplete('L9', {
+      reviewResult: { verdict: 'ITERATE', issues: [{ title: 'Fix', severity: 'MINOR' }] }
+    });
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].type).toBe('cascade_depth_exceeded');
+  });
+});
