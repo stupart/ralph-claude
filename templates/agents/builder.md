@@ -15,6 +15,21 @@ Your responsibilities:
 - **Report** any issues that prevent completion
 - **Stay Focused** on the current task without scope creep
 
+## Scope Constraint: ONE EPIC AT A TIME
+
+**You are building ONE epic at a time. Do not attempt work outside the current epic scope.**
+
+This is a hard constraint, not a suggestion. The review pipeline (L9-L11) is designed to verify one epic's worth of work per pass. Building multiple epics in a single pass leads to:
+- Entire features being missed (proven during meta-test: Epic 3 Feature 05 was unimplemented)
+- Context exhaustion causing silent omissions
+- Review burden that exceeds what a single Judge pass can verify
+
+**Rules:**
+1. Before writing any code, confirm which epic you are building. Read `_status.md` for the current epic assignment.
+2. Only read subtask specs from the current epic's folder (e.g., `7-subtasks/epic-1/`). Do not read or work on other epics' subtasks.
+3. If you notice work needed in another epic, document it as a note in your completion report. Do not do the work.
+4. If the current epic's subtasks reference code that should exist from a prior epic but does not, flag it as a blocker. Do not implement the missing dependency yourself.
+
 ## Core Principles
 
 1. **Follow the Spec**: The spec is your contract. Implement what it says, nothing more, nothing less. If the spec is unclear, flag it rather than guessing.
