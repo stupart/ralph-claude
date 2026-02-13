@@ -160,6 +160,67 @@ describe('Ralph', () => {
     expect(result.error).toContain('timed out');
   });
 
+  test('runLayerCycle provides abortSignal and registerProcess to executor', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 500 });
+    await ralph.initialize();
+
+    let receivedSignal = null;
+    let receivedRegister = null;
+
+    const executor = async (spawnConfig) => {
+      receivedSignal = spawnConfig.abortSignal;
+      receivedRegister = spawnConfig.registerProcess;
+
+      const folderPath = path.join(testDir, '1-input');
+      await fs.mkdir(folderPath, { recursive: true });
+      await fs.writeFile(path.join(folderPath, 'output.md'), '# Output\n');
+      return {};
+    };
+
+    await ralph.runLayerCycle(executor);
+
+    expect(receivedSignal).toBeDefined();
+    expect(receivedSignal).toBeInstanceOf(AbortSignal);
+    expect(typeof receivedRegister).toBe('function');
+  });
+
+  test('runLayerCycle kills registered process on timeout', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100 });
+    await ralph.initialize();
+
+    const mockProcess = {
+      killed: false,
+      kill: jest.fn(function() { this.killed = true; })
+    };
+
+    const slowExecutor = (spawnConfig) => {
+      spawnConfig.registerProcess(mockProcess);
+      return new Promise(resolve => setTimeout(resolve, 5000));
+    };
+
+    const result = await ralph.runLayerCycle(slowExecutor);
+
+    expect(result.status).toBe('error');
+    expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
+  });
+
+  test('runLayerCycle fires abort signal on timeout', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100 });
+    await ralph.initialize();
+
+    let signalAborted = false;
+
+    const slowExecutor = (spawnConfig) => {
+      spawnConfig.abortSignal.addEventListener('abort', () => {
+        signalAborted = true;
+      });
+      return new Promise(resolve => setTimeout(resolve, 5000));
+    };
+
+    await ralph.runLayerCycle(slowExecutor);
+    expect(signalAborted).toBe(true);
+  });
+
   test('runLayerCycle advances on successful execution', async () => {
     const ralph = new Ralph(testDir, { verbose: false });
     await ralph.initialize();
