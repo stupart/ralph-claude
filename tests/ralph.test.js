@@ -151,7 +151,7 @@ describe('Ralph', () => {
   });
 
   test('runLayerCycle handles agent timeout', async () => {
-    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100 });
+    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100, maxRetries: 0 });
     await ralph.initialize();
 
     const slowExecutor = () => new Promise(resolve => setTimeout(resolve, 5000));
@@ -185,7 +185,7 @@ describe('Ralph', () => {
   });
 
   test('runLayerCycle kills registered process on timeout', async () => {
-    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100 });
+    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100, maxRetries: 0 });
     await ralph.initialize();
 
     const mockProcess = {
@@ -205,7 +205,7 @@ describe('Ralph', () => {
   });
 
   test('runLayerCycle fires abort signal on timeout', async () => {
-    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100 });
+    const ralph = new Ralph(testDir, { verbose: false, agentTimeout: 100, maxRetries: 0 });
     await ralph.initialize();
 
     let signalAborted = false;
@@ -230,6 +230,60 @@ describe('Ralph', () => {
     expect(result.status).toBe('advanced');
     expect(result.from).toBe('L1');
     expect(result.to).toBe('L2');
+  });
+
+  test('runLayerCycle retries on crash then succeeds', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, maxRetries: 2 });
+    await ralph.initialize();
+
+    let attempts = 0;
+    const executor = async (spawnConfig) => {
+      attempts++;
+      if (attempts < 2) {
+        throw new Error('Agent crashed');
+      }
+      // Succeed on second attempt
+      const folderPath = path.join(testDir, '1-input');
+      await fs.mkdir(folderPath, { recursive: true });
+      await fs.writeFile(path.join(folderPath, 'output.md'), '# Output\n');
+      return {};
+    };
+
+    const result = await ralph.runLayerCycle(executor);
+    expect(result.status).toBe('advanced');
+    expect(attempts).toBe(2);
+  });
+
+  test('runLayerCycle exhausts retries and returns error', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, maxRetries: 2 });
+    await ralph.initialize();
+
+    let attempts = 0;
+    const executor = async () => {
+      attempts++;
+      throw new Error('Always crashes');
+    };
+
+    const result = await ralph.runLayerCycle(executor);
+    expect(result.status).toBe('error');
+    expect(result.attempts).toBe(3); // 1 initial + 2 retries
+    expect(attempts).toBe(3);
+    expect(result.error).toContain('Always crashes');
+  });
+
+  test('runLayerCycle with maxRetries 0 fails immediately', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, maxRetries: 0 });
+    await ralph.initialize();
+
+    let attempts = 0;
+    const executor = async () => {
+      attempts++;
+      throw new Error('Crash');
+    };
+
+    const result = await ralph.runLayerCycle(executor);
+    expect(result.status).toBe('error');
+    expect(attempts).toBe(1);
   });
 
   test('onLayerComplete routes ITERATE verdict correctly', async () => {
