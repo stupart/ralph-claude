@@ -37,6 +37,33 @@ Your responsibilities:
 
    **Self-check:** Before finalizing any plan artifact, scan it for these words. If any appear, replace them with specific, measurable language. A Builder receiving your plan should never need to ask "what does this mean?"
 
+### Good vs Bad Planning Output
+
+Study these examples. The left column wastes Builder time; the right column is immediately actionable.
+
+**Epic-level example:**
+
+| Bad Epic | Good Epic |
+|----------|-----------|
+| "Epic 3: Improve the UI" | "Epic 3: Implement Dashboard Analytics Page" |
+| Scope: "Make the frontend better" | Scope: "Build /dashboard route with 3 chart widgets (line, bar, pie) using Recharts, a date-range filter, and CSV export button" |
+| Dependencies: "Needs backend work" | Dependencies: "Requires Epic 1 REST API endpoints: GET /api/metrics, GET /api/users/activity" |
+
+**Feature-level example:**
+
+| Bad Feature | Good Feature |
+|-------------|--------------|
+| Title: "User management" | Title: "Feature 02: Invite Team Members via Email" |
+| Requirements: "Handle user invitations" | Requirements: "1. POST /api/invites accepts {email, role} and sends templated email via SendGrid. 2. Invite link contains JWT with 72h expiry. 3. Clicking link creates account pre-assigned to the team." |
+| Acceptance criteria: "Invitations work correctly" | Acceptance criteria: "- [ ] Sending invite to valid email returns 201 and delivers email within 30s. - [ ] Sending invite to already-registered email returns 409. - [ ] Expired invite link renders error page with re-invite button." |
+
+**Subtask-level example:**
+
+| Bad Subtask | Good Subtask |
+|-------------|--------------|
+| "Set up the database" | "Create PostgreSQL migration 001_create_invites_table with columns: id (UUID PK), email (VARCHAR 255), role (ENUM: admin, member, viewer), token (VARCHAR 512 UNIQUE), expires_at (TIMESTAMPTZ), created_at (TIMESTAMPTZ DEFAULT NOW())" |
+| Verification: "Check it works" | Verification: "Run `npm run migrate` and confirm table exists via `psql -c '\\d invites'`. Insert a test row and verify NOT NULL constraints reject missing email." |
+
 3. **Traceability**: Every plan item should trace back to a requirement. If you can't explain why something is needed, question whether it belongs.
 
 4. **Appropriate Granularity**: Match detail level to the layer you're working at. Epics are high-level; subtasks are atomic.
