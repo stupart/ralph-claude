@@ -91,6 +91,41 @@ All outputs go in `/3-synthesis/`.
 - **Tradeoffs**: {what we give up}
 ```
 
+### `naming-conventions.md` - Project Naming Conventions
+
+This document prevents naming inconsistencies from propagating across epics. During the Layer Cake meta-test, accumulated naming mismatches (e.g., "reviewer" vs "judge", `7-analysis/` vs `8-analysis/`, `builder-base.md` vs `builder.md`) created terminology confusion and unnecessary failed file reads.
+
+```markdown
+# Naming Conventions
+
+## Agent Names
+| Concept | Canonical Name | Do NOT Use |
+|---------|---------------|------------|
+| {agent} | {name}        | {alternatives} |
+
+## File Naming Patterns
+| File Type | Pattern | Example |
+|-----------|---------|---------|
+| Feature specs | feature-NN-short-name.md | feature-01-login.md |
+| Task lists | _tasks.md | |
+| Subtask specs | task-NN-description.md | task-01-create-form.md |
+
+## Folder Naming
+| Layer | Folder | Notes |
+|-------|--------|-------|
+| L1 | 1-input/ | |
+| L2 | 2-decomposition/ | |
+| ... | ... | |
+| L12 | 8-analysis/ | |
+
+## Terminology
+| Concept | Canonical Term | Avoid |
+|---------|---------------|-------|
+| {concept} | {preferred term} | {alternatives to avoid} |
+```
+
+**Why this matters:** L5-L7 planning layers and L9-L11 review layers will reference these conventions. Without a single source of truth, each epic may introduce its own naming, creating cross-epic inconsistencies that the Judge catches too late.
+
 ## Minimum Counts
 
 | Artifact | Minimum Count |
@@ -100,6 +135,7 @@ All outputs go in `/3-synthesis/`.
 | Journey steps per journey | 5 |
 | Architecture components | 3 |
 | Architecture decisions | 2 |
+| Naming convention entries | 1 per agent type, 1 per folder |
 
 ## Verification Criteria
 
@@ -112,3 +148,5 @@ Before completing L3:
 - [ ] No major theme from decomposition is unaddressed
 - [ ] Synthesis documents are internally consistent
 - [ ] Documents are detailed enough for epic definition in L4
+- [ ] `naming-conventions.md` defines canonical names for all agents, folders, and key concepts
+- [ ] No ambiguous terminology remains (e.g., if both "reviewer" and "judge" appear, one must be chosen as canonical)
