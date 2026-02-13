@@ -35,7 +35,8 @@ function parseArgs(argv) {
       verbose: true,
       autoApproveGates: false,
       timeout: 300000,
-      dryRun: false
+      dryRun: false,
+      noColor: false
     }
   };
 
@@ -72,6 +73,10 @@ function parseArgs(argv) {
       case '--dry-run':
         result.options.dryRun = true;
         break;
+      case '--no-color':
+        result.options.noColor = true;
+        colorEnabled = false;
+        break;
       case '--help':
         result.command = 'help';
         break;
@@ -81,14 +86,50 @@ function parseArgs(argv) {
   return result;
 }
 
+/**
+ * ANSI color codes for CLI output
+ */
+const COLORS = {
+  reset: '\x1b[0m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',    // gray/dim for pending
+  cyan: '\x1b[36m'
+};
+
+/** Whether color output is enabled (can be disabled with --no-color) */
+let colorEnabled = true;
+
+/**
+ * Apply color to text if color is enabled
+ * @param {string} text
+ * @param {...string} codes - ANSI codes to apply
+ * @returns {string}
+ */
+function color(text, ...codes) {
+  if (!colorEnabled) return text;
+  return codes.join('') + text + COLORS.reset;
+}
+
 // Format a layer status line
-function formatLayerLine(layerId, layer, currentLayer) {
+function formatLayerLine(layerId, layer, currentLayer, useColor = true) {
   const layerNum = parseInt(layerId.slice(1));
   const currentNum = currentLayer === 'COMPLETE' ? 13 : parseInt(currentLayer.slice(1));
   const isComplete = layerNum < currentNum;
   const isCurrent = layerId === currentLayer;
   const checkbox = isComplete ? '[x]' : (isCurrent ? '[>]' : '[ ]');
-  return `  ${checkbox} ${layerId}: ${layer.name} (${layer.phase}, ${layer.agent})`;
+  const line = `  ${checkbox} ${layerId}: ${layer.name} (${layer.phase}, ${layer.agent})`;
+
+  if (!useColor || !colorEnabled) return line;
+
+  if (isComplete) {
+    return color(line, COLORS.green);
+  } else if (isCurrent) {
+    return color(line, COLORS.bold, COLORS.yellow);
+  } else {
+    return color(line, COLORS.dim);
+  }
 }
 
 // Commands
@@ -114,6 +155,7 @@ Options:
   --auto-approve     Auto-approve human gates (L3, L7)
   --timeout <ms>     Agent timeout in milliseconds (default: 300000)
   --dry-run          Show spawn config without executing agent
+  --no-color         Disable colored output
   --help             Show this help
 
 Examples:
@@ -377,8 +419,16 @@ async function main() {
   }
 }
 
+/**
+ * Set color enabled state (for testing)
+ * @param {boolean} enabled
+ */
+function setColorEnabled(enabled) {
+  colorEnabled = enabled;
+}
+
 // Export for testing
-module.exports = { parseArgs, cmdInit, cmdStatus, cmdResume, cmdCost, formatLayerLine };
+module.exports = { parseArgs, cmdInit, cmdStatus, cmdResume, cmdCost, formatLayerLine, COLORS, color, setColorEnabled };
 
 // Run if executed directly
 if (require.main === module) {

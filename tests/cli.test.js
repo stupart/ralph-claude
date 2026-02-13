@@ -5,7 +5,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
-const { parseArgs, formatLayerLine, cmdInit, cmdStatus, cmdResume, cmdCost } = require('../bin/ralph-cli');
+const { parseArgs, formatLayerLine, cmdInit, cmdStatus, cmdResume, cmdCost, COLORS, color, setColorEnabled } = require('../bin/ralph-cli');
 
 async function createTempDir() {
   const tmpBase = path.join(os.tmpdir(), 'ralph-cli-test');
@@ -126,6 +126,16 @@ describe('parseArgs', () => {
     const result = parseArgs(['node', 'ralph-cli', 'run']);
     expect(result.options.dryRun).toBe(false);
   });
+
+  test('parses --no-color option', () => {
+    const result = parseArgs(['node', 'ralph-cli', 'status', '--no-color']);
+    expect(result.options.noColor).toBe(true);
+  });
+
+  test('defaults noColor to false', () => {
+    const result = parseArgs(['node', 'ralph-cli', 'status']);
+    expect(result.options.noColor).toBe(false);
+  });
 });
 
 describe('formatLayerLine', () => {
@@ -151,6 +161,64 @@ describe('formatLayerLine', () => {
   test('shows all layers complete for COMPLETE', () => {
     const line = formatLayerLine('L12', { name: 'Analysis', phase: 'learn', agent: 'planner' }, 'COMPLETE');
     expect(line).toContain('[x]');
+  });
+});
+
+describe('Colored output', () => {
+  beforeEach(() => {
+    setColorEnabled(true);
+  });
+
+  afterAll(() => {
+    setColorEnabled(true);
+  });
+
+  test('completed layer includes green ANSI code', () => {
+    setColorEnabled(true);
+    const line = formatLayerLine('L1', { name: 'Input', phase: 'understand', agent: 'planner' }, 'L3', true);
+    expect(line).toContain(COLORS.green);
+    expect(line).toContain(COLORS.reset);
+  });
+
+  test('current layer includes yellow+bold ANSI codes', () => {
+    setColorEnabled(true);
+    const line = formatLayerLine('L3', { name: 'Synthesize', phase: 'understand', agent: 'planner' }, 'L3', true);
+    expect(line).toContain(COLORS.yellow);
+    expect(line).toContain(COLORS.bold);
+    expect(line).toContain(COLORS.reset);
+  });
+
+  test('pending layer includes dim ANSI code', () => {
+    setColorEnabled(true);
+    const line = formatLayerLine('L5', { name: 'Feature Planning', phase: 'plan', agent: 'planner' }, 'L3', true);
+    expect(line).toContain(COLORS.dim);
+    expect(line).toContain(COLORS.reset);
+  });
+
+  test('no color when useColor=false', () => {
+    setColorEnabled(true);
+    const line = formatLayerLine('L1', { name: 'Input', phase: 'understand', agent: 'planner' }, 'L3', false);
+    expect(line).not.toContain(COLORS.green);
+    expect(line).not.toContain(COLORS.reset);
+  });
+
+  test('no color when colorEnabled=false', () => {
+    setColorEnabled(false);
+    const line = formatLayerLine('L1', { name: 'Input', phase: 'understand', agent: 'planner' }, 'L3', true);
+    expect(line).not.toContain(COLORS.green);
+    expect(line).not.toContain(COLORS.reset);
+  });
+
+  test('color() helper applies codes when enabled', () => {
+    setColorEnabled(true);
+    const result = color('test', COLORS.green);
+    expect(result).toBe(`${COLORS.green}test${COLORS.reset}`);
+  });
+
+  test('color() helper returns plain text when disabled', () => {
+    setColorEnabled(false);
+    const result = color('test', COLORS.green);
+    expect(result).toBe('test');
   });
 });
 
