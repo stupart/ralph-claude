@@ -9,10 +9,18 @@ const os = require('os');
 const { Ralph } = require('../lib/ralph');
 const { LAYERS } = require('../lib/state-machine');
 
+const TEMPLATES_PATH = path.resolve(__dirname, '..', 'templates', 'agents');
 let testDir;
 
 beforeEach(async () => {
   testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ralph-test-'));
+  // Copy templates to test dir so spawner can find them
+  const templatesDir = path.join(testDir, 'templates', 'agents');
+  await fs.mkdir(templatesDir, { recursive: true });
+  const templateFiles = await fs.readdir(TEMPLATES_PATH);
+  for (const f of templateFiles) {
+    await fs.copyFile(path.join(TEMPLATES_PATH, f), path.join(templatesDir, f));
+  }
 });
 
 afterEach(async () => {
@@ -89,18 +97,17 @@ describe('Ralph', () => {
     expect(result.position.layer).toBe('L1');
   });
 
-  test('initialize detects COMPLETE state', async () => {
-    // Write a status file at COMPLETE
-    await fs.writeFile(path.join(testDir, '_status.md'), [
-      '# Project Status', '', '## Meta', '- **Project:** Test',
-      '- **Started:** 2026-01-01', '- **Last Updated:** 2026-01-01',
-      '', '## Current Position', '- **Layer:** COMPLETE',
-      '- **Layer Name:** Done', '', '## Gates',
-      '- **L3 (Synthesis):** approved', '- **L7 (Plan Approval):** approved'
-    ].join('\n'));
-
+  test('runNextLayer returns complete for COMPLETE state', async () => {
     const ralph = new Ralph(testDir, { verbose: false });
-    const result = await ralph.initialize();
+    await ralph.initialize();
+
+    // Manually set to COMPLETE (simulating post-L12)
+    ralph.state.state.position.layer = 'COMPLETE';
+    await ralph.state.write();
+
+    // Re-read state and try to run
+    await ralph.state.read();
+    const result = await ralph.runNextLayer();
     expect(result.status).toBe('complete');
   });
 
