@@ -23,10 +23,11 @@ L4 outline specified 6 chunks for the skill tree build. L5 (Chunk Planning) only
 
 ---
 
-## BUG-002: Claude can self-advance layers by editing _status.md
+## BUG-002: Claude can self-advance layers by editing _status.md [FIXED gen4]
 
 **Severity:** MINOR (by design, but risky)
 **Found:** 2026-01-30
+**Fixed:** gen4 - StateManager.write() now calls validateLayerAdvancement() on forward transitions. The method checks that the departing layer's output folder exists and contains at least one artifact file before allowing the advance. Cascades (backward transitions) and iterations are always allowed. Throws a descriptive error if validation fails.
 
 **Description:**
 The orchestrator checks if Claude changed the layer (main.rs line 431) and mostly trusts it. Combined with BUG-001 (no validation for L5+), Claude can skip chunks by just updating `_status.md` to the next layer.

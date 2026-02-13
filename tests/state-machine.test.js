@@ -48,6 +48,11 @@ describe('StateManager', () => {
     const state = new StateManager(TEST_ROOT);
     await state.read();
 
+    // BUG-002: must create artifacts before advancing
+    const inputDir = path.join(TEST_ROOT, '1-input');
+    await fs.mkdir(inputDir, { recursive: true });
+    await fs.writeFile(path.join(inputDir, 'output.md'), '# L1');
+
     const result = await state.advance();
 
     expect(result.to).toBe('L2');
@@ -148,6 +153,11 @@ describe('StateManager', () => {
     state.state.gates = { L3: { status: 'approved', approvedAt: new Date().toISOString() } };
     await state.write();
 
+    // BUG-002: must create artifacts before advancing from L3
+    const synthDir = path.join(TEST_ROOT, '3-synthesis');
+    await fs.mkdir(synthDir, { recursive: true });
+    await fs.writeFile(path.join(synthDir, 'output.md'), '# Synthesis');
+
     const result = await state.advance();
 
     expect(result.action).toBe('advance');
@@ -177,10 +187,56 @@ describe('history', () => {
     const state = new StateManager(TEST_ROOT);
     await state.read();
 
-    await state.advance();
-    await state.advance();
+    // BUG-002: create artifacts for each layer before advancing
+    await fs.mkdir(path.join(TEST_ROOT, '1-input'), { recursive: true });
+    await fs.writeFile(path.join(TEST_ROOT, '1-input', 'out.md'), '# L1');
+    await state.advance(); // L1 -> L2
+
+    await fs.mkdir(path.join(TEST_ROOT, '2-decomposition'), { recursive: true });
+    await fs.writeFile(path.join(TEST_ROOT, '2-decomposition', 'out.md'), '# L2');
+    await state.advance(); // L2 -> L3
 
     expect(state.state.history.length).toBeGreaterThanOrEqual(2);
     expect(state.state.history[state.state.history.length - 1].action).toContain('Advanced');
+  });
+});
+
+describe('BUG-002: validateLayerAdvancement', () => {
+  test('blocks advance when artifacts folder is missing', async () => {
+    const state = new StateManager(TEST_ROOT);
+    await state.read();
+    // L1 at start, no 1-input folder -> should fail to advance
+
+    await expect(state.advance()).rejects.toThrow('BUG-002 guard');
+  });
+
+  test('blocks advance when artifacts folder is empty', async () => {
+    const state = new StateManager(TEST_ROOT);
+    await state.read();
+    // Create empty folder
+    await fs.mkdir(path.join(TEST_ROOT, '1-input'), { recursive: true });
+
+    await expect(state.advance()).rejects.toThrow('BUG-002 guard');
+  });
+
+  test('allows advance when artifacts folder has content', async () => {
+    const state = new StateManager(TEST_ROOT);
+    await state.read();
+    await fs.mkdir(path.join(TEST_ROOT, '1-input'), { recursive: true });
+    await fs.writeFile(path.join(TEST_ROOT, '1-input', 'brain-dump.md'), '# Content');
+
+    const result = await state.advance();
+    expect(result.to).toBe('L2');
+  });
+
+  test('allows cascade (backward transition) without artifacts', async () => {
+    const state = new StateManager(TEST_ROOT);
+    await state.read();
+    state.state.position.layer = 'L5';
+    await state.write();
+
+    // Cascade backward does not require artifacts
+    const result = await state.cascade('L3');
+    expect(result.to).toBe('L3');
   });
 });
