@@ -282,12 +282,14 @@ The `lib/` directory contains the Node.js orchestration layer:
 
 ```
 lib/
-  ralph.js          - Main orchestrator: spawns agents, validates, routes
-  state-machine.js  - Manages _status.md and layer transitions
-  validator.js      - Enforces minimum counts and required sections
-  router.js         - Routes Judge verdicts (PASS/ITERATE) with cascade rules
-  agent-spawner.js  - Assembles prompts and tool permissions per agent type
-  recovery.js       - Reconciles state with filesystem on startup
+  ralph.js              - Main orchestrator: spawns agents, validates, routes
+  state-machine.js      - Manages _status.md and layer transitions (with file locking)
+  validator.js          - Enforces minimum counts and required sections
+  router.js             - Routes Judge verdicts (PASS/ITERATE) with cascade rules
+  agent-spawner.js      - Assembles prompts and tool permissions (with template caching)
+  recovery.js           - Reconciles state with filesystem on startup
+  parallel-executor.js  - Concurrent epic building with bounded work queue
+  config.js             - Config file support (ralph.config.json / .ralphrc)
 ```
 
 ### Using the JS Layer
@@ -298,7 +300,8 @@ const { Ralph } = require('./lib/ralph');
 const ralph = new Ralph('/path/to/project', {
   tier: 'small',         // small | micro | medium | large
   autoApproveGates: false,
-  agentTimeout: 300000   // 5 min timeout per agent
+  agentTimeout: 300000,  // 5 min timeout per agent
+  maxRetries: 3          // retry crashed agents with exponential backoff
 });
 
 await ralph.initialize();
@@ -313,18 +316,39 @@ const result = await ralph.runLayerCycle(async (spawnConfig) => {
 // Or run the full project
 await ralph.runProject(agentExecutor);
 
+// Or run epics in parallel
+const { ParallelExecutor } = require('./lib/parallel-executor');
+const parallel = new ParallelExecutor(ralph, agentExecutor, { concurrency: 2 });
+const epicResults = await parallel.runEpics(['epic-auth', 'epic-api', 'epic-ui']);
+
 // Check cost tracking
 const status = await ralph.getStatus();
 console.log(status.costs);  // { layers: {...}, totals: { inputTokens, outputTokens, calls } }
+```
+
+### Configuration
+
+Create `ralph.config.json` or `.ralphrc` in your project root:
+
+```json
+{
+  "tier": "medium",
+  "timeout": 600000,
+  "concurrency": 3,
+  "autoApproveGates": false,
+  "webhookUrl": "https://hooks.slack.com/services/...",
+  "maxRetries": 3
+}
 ```
 
 ### Running Tests
 
 ```bash
 npx jest --config jest.config.js --forceExit
+npx jest --config jest.config.js --coverage --forceExit  # with coverage report
 ```
 
-Runs 116 tests across 6 suites covering all orchestration modules.
+Runs 328 tests across 18 suites covering all orchestration modules (87% line coverage).
 
 ---
 

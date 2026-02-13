@@ -50,9 +50,12 @@
 
 ## Methodology Ideas
 
-### Parallel Chunk Building
-- Chunks with no dependencies could be built in parallel (multiple Claude sessions)
-- Would need a job queue and merge strategy
+### Parallel Epic Building [DONE gen7]
+- ~~Chunks with no dependencies could be built in parallel (multiple Claude sessions)~~
+- ~~Would need a job queue and merge strategy~~
+- Implemented in `lib/parallel-executor.js` with bounded work queue
+- Configurable concurrency limit (default 2), FIFO ordering, per-epic result collection
+- Graceful failure handling: one epic failing does not stop others
 
 ### Human-in-the-Loop Gates [DONE gen2]
 - Optional approval gates between layers (like Layer Cake's L3/L7 gates)
@@ -84,3 +87,44 @@
 ### Template Variable Documentation [DONE gen6]
 - Documented {{LAYER_INSTRUCTIONS}}, {{epic}}, {{feature}}, {{task}} in planner-base.md header comment
 - Instructions for adding new template variables
+
+### Prompt Template Caching [DONE gen7]
+- LRU cache in `AgentSpawner` avoids re-reading template files on every spawn
+- Invalidates when file mtime changes, configurable max size (default 20)
+- Implemented in `lib/agent-spawner.js` as `TemplateCache` class
+
+### Retry with Exponential Backoff [DONE gen7]
+- Agent crashes/timeouts in `runLayerCycle` now retry with backoff (1s, 2s, 4s)
+- Up to `maxRetries` times (default 3) before failing
+- Only actual errors are retried -- ITERATE verdicts use the routing system
+
+### Concurrent State Safety [DONE gen7]
+- Advisory file locking on `_status.md.lock` using O_EXCL (exclusive create)
+- Stale lock detection (breaks locks older than 30s)
+- Prevents corruption from concurrent access during parallel epic building
+
+### Config File Support [DONE gen7]
+- Reads `ralph.config.json` or `.ralphrc` for default options
+- Three-layer merge: built-in defaults < file config < CLI overrides
+- Supports: tier, timeout, webhookUrl, autoApproveGates, concurrency, maxRetries, etc.
+- Implemented in `lib/config.js`
+
+### Jest Coverage Configuration [DONE gen7]
+- Coverage reporting enabled with thresholds: 80% lines/statements/functions, 60% branches
+- Current coverage: 87.76% lines, 95.73% functions across all lib modules
+- 328 total tests across 18 suites (up from 269 in 15 suites)
+
+## Future Ideas
+
+### Progress Bar
+- Terminal progress bar showing which layer is active and overall progress
+- Could use `ora` or similar terminal spinner library
+
+### JSON Output Mode
+- `--json` flag to CLI for machine-readable output
+- Useful for piping into other tools or CI/CD integrations
+
+### Dependency-Aware Parallel Building
+- Analyze epic dependencies from L4 artifacts
+- Only parallelize truly independent epics
+- Topological sort for dependency ordering
