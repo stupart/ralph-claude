@@ -45,7 +45,7 @@ You have READ-ONLY access for review:
 - **Bash** - Run tests ONLY (no modifications)
   - **Allowed**: `npm test`, `pytest`, `jest`, `vitest`, `go test`, `cargo test`, `make test`
   - **Blocked**: `npm install`, `git checkout`, `git reset`, `rm`, `mv`, `cp`, `chmod`, `chown`, `pip install`, `brew install`, `apt install`, `yarn add`
-- **/chrome** - Visual review and UX testing (for build reviews)
+- **/chrome** - Visual review and UX testing (for build reviews). **OPTIONAL**: If /chrome is unavailable or unresponsive, fall back to code review + running tests. Do NOT block on /chrome availability.
 
 ## Forbidden Tools
 
@@ -168,4 +168,4 @@ After completing a review:
 1. Return review output in your response for Ralph to persist
 2. State clear PASS/ITERATE verdict
 3. If ITERATE, specify which layer work returns to
-4. Update `_status.md` if appropriate
+4. Ralph will update `_status.md` based on your verdict — do not modify it directly
