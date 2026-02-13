@@ -253,6 +253,81 @@ Claude will open a browser and can click through UI flows, fill forms, verify re
 
 ---
 
+## Layer Cake: 12-Layer Planning and Build Pipeline
+
+Layer Cake is the structured methodology that decomposes a project through 12 layers using specialized agents (Planner, Builder, Judge) in a GAN-style adversarial loop.
+
+### The 12 Layers
+
+| Layer | Name | Agent | Phase |
+|-------|------|-------|-------|
+| L1 | Input | Planner | Understand |
+| L2 | Decompose | Planner | Understand |
+| L3 | Synthesize | Planner | Understand |
+| L4 | Epic Definition | Planner | Plan |
+| L5 | Feature Planning | Planner | Plan |
+| L6 | Task Specification | Planner | Plan |
+| L7 | Subtask Definition | Planner | Plan |
+| L8 | Build | Builder | Build |
+| L9 | Feature Review | Judge | Review |
+| L10 | Epic Review | Judge | Review |
+| L11 | Final Review | Judge | Review |
+| L12 | Analysis | Planner | Learn |
+
+Human approval gates exist at L3 (after synthesis) and L7 (after full plan).
+
+### JS Orchestration
+
+The `lib/` directory contains the Node.js orchestration layer:
+
+```
+lib/
+  ralph.js          - Main orchestrator: spawns agents, validates, routes
+  state-machine.js  - Manages _status.md and layer transitions
+  validator.js      - Enforces minimum counts and required sections
+  router.js         - Routes Judge verdicts (PASS/ITERATE) with cascade rules
+  agent-spawner.js  - Assembles prompts and tool permissions per agent type
+  recovery.js       - Reconciles state with filesystem on startup
+```
+
+### Using the JS Layer
+
+```javascript
+const { Ralph } = require('./lib/ralph');
+
+const ralph = new Ralph('/path/to/project', {
+  tier: 'small',         // small | micro | medium | large
+  autoApproveGates: false,
+  agentTimeout: 300000   // 5 min timeout per agent
+});
+
+await ralph.initialize();
+
+// Run one layer at a time
+const result = await ralph.runLayerCycle(async (spawnConfig) => {
+  // Execute agent using spawnConfig.prompt, spawnConfig.permissions, etc.
+  // Return artifacts including optional tokenUsage: { inputTokens, outputTokens }
+  return { tokenUsage: { inputTokens: 2000, outputTokens: 1000 } };
+});
+
+// Or run the full project
+await ralph.runProject(agentExecutor);
+
+// Check cost tracking
+const status = await ralph.getStatus();
+console.log(status.costs);  // { layers: {...}, totals: { inputTokens, outputTokens, calls } }
+```
+
+### Running Tests
+
+```bash
+npx jest --config jest.config.js --forceExit
+```
+
+Runs 116 tests across 6 suites covering all orchestration modules.
+
+---
+
 ## Tips
 
 - **Start small**: Begin with 1-2 features, add more as they complete
