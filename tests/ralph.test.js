@@ -6,7 +6,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
-const { Ralph } = require('../lib/ralph');
+const { Ralph, CostTracker } = require('../lib/ralph');
 const { LAYERS } = require('../lib/state-machine');
 
 const TEMPLATES_PATH = path.resolve(__dirname, '..', 'templates', 'agents');
@@ -241,5 +241,87 @@ describe('Ralph', () => {
       const stat = await fs.stat(path.join(testDir, folder));
       expect(stat.isDirectory()).toBe(true);
     }
+  });
+
+  test('getStatus includes cost summary', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+
+    const status = await ralph.getStatus();
+    expect(status.costs).toBeDefined();
+    expect(status.costs.totals.inputTokens).toBe(0);
+    expect(status.costs.totals.outputTokens).toBe(0);
+    expect(status.costs.totals.calls).toBe(0);
+  });
+
+  test('runLayerCycle records token usage from artifacts', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+
+    const costEvents = [];
+    ralph.on('onCostUpdate', (data) => costEvents.push(data));
+
+    const executor = async (spawnConfig) => {
+      const folderMap = { L1: '1-input' };
+      const folder = folderMap[spawnConfig.layerId];
+      if (folder) {
+        await fs.mkdir(path.join(testDir, folder), { recursive: true });
+        await fs.writeFile(path.join(testDir, folder, 'output.md'), '# Output\n');
+      }
+      return {
+        tokenUsage: { inputTokens: 1500, outputTokens: 800 }
+      };
+    };
+
+    await ralph.runLayerCycle(executor);
+
+    expect(costEvents).toHaveLength(1);
+    expect(costEvents[0].layerId).toBe('L1');
+    expect(costEvents[0].inputTokens).toBe(1500);
+    expect(costEvents[0].outputTokens).toBe(800);
+
+    const summary = ralph.costs.getSummary();
+    expect(summary.layers.L1.inputTokens).toBe(1500);
+    expect(summary.layers.L1.outputTokens).toBe(800);
+    expect(summary.layers.L1.calls).toBe(1);
+    expect(summary.totals.inputTokens).toBe(1500);
+    expect(summary.totals.outputTokens).toBe(800);
+  });
+});
+
+describe('CostTracker', () => {
+  test('records and accumulates token usage', () => {
+    const tracker = new CostTracker();
+    tracker.record('L1', 1000, 500);
+    tracker.record('L1', 200, 100);
+    tracker.record('L2', 300, 150);
+
+    const summary = tracker.getSummary();
+    expect(summary.layers.L1.inputTokens).toBe(1200);
+    expect(summary.layers.L1.outputTokens).toBe(600);
+    expect(summary.layers.L1.calls).toBe(2);
+    expect(summary.layers.L2.inputTokens).toBe(300);
+    expect(summary.layers.L2.calls).toBe(1);
+    expect(summary.totals.inputTokens).toBe(1500);
+    expect(summary.totals.outputTokens).toBe(750);
+    expect(summary.totals.calls).toBe(3);
+  });
+
+  test('reset clears all data', () => {
+    const tracker = new CostTracker();
+    tracker.record('L1', 1000, 500);
+    tracker.reset();
+
+    const summary = tracker.getSummary();
+    expect(summary.totals.inputTokens).toBe(0);
+    expect(summary.totals.calls).toBe(0);
+    expect(Object.keys(summary.layers)).toHaveLength(0);
+  });
+
+  test('handles zero-token records', () => {
+    const tracker = new CostTracker();
+    tracker.record('L1');
+    expect(tracker.getSummary().layers.L1.calls).toBe(1);
+    expect(tracker.getSummary().layers.L1.inputTokens).toBe(0);
   });
 });
