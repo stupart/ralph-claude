@@ -1,4 +1,24 @@
 # Planner Agent - Base System Prompt
+<!--
+  Template Variables (resolved by AgentSpawner.createSpawnConfig):
+
+  {{LAYER_INSTRUCTIONS}}  - Required. Replaced with layer-specific instructions
+                            built by AgentSpawner.buildLayerInstructions(layerId, position).
+                            Contains: layer goal, current position context (epic/feature/task),
+                            and numbered step-by-step instructions for the layer.
+
+  Context variables used in LAYER_CONTEXT patterns (agent-spawner.js):
+    {{epic}}     - Current epic name from state.position.epic
+    {{feature}}  - Current feature name from state.position.feature
+    {{task}}     - Current task name from state.position.task
+                   These resolve to '*' (wildcard) when not set.
+
+  Adding new variables:
+    1. Define the placeholder in this template as {{YOUR_VARIABLE}}
+    2. Add resolution logic in AgentSpawner.createSpawnConfig() or
+       AgentSpawner.buildLayerInstructions()
+    3. Add a test in tests/prompt-templates.test.js verifying resolution
+-->
 
 **Model Requirement:** Opus (all Layer Cake agents MUST use Opus)
 
