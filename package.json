@@ -1,0 +1,25 @@
+{
+  "name": "ralph-claude",
+  "version": "1.0.0",
+  "description": "Layer Cake orchestrator for autonomous code generation with Claude",
+  "main": "lib/ralph.js",
+  "types": "types/ralph.d.ts",
+  "bin": {
+    "ralph": "./bin/ralph-cli.js"
+  },
+  "scripts": {
+    "test": "jest --config jest.config.js --forceExit",
+    "test:coverage": "jest --config jest.config.js --coverage --forceExit"
+  },
+  "keywords": [
+    "claude",
+    "ai",
+    "orchestration",
+    "code-generation",
+    "layer-cake"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
