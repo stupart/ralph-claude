@@ -5,7 +5,7 @@
  * Converted from custom runner to jest in gen4.
  */
 
-const { StateManager, LAYERS, LAYER_FOLDERS, DEFAULT_STATE } = require('../lib/state-machine');
+const { StateManager, LAYERS, LAYER_FOLDERS, DEFAULT_STATE, acquireLock, releaseLock } = require('../lib/state-machine');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
@@ -238,5 +238,87 @@ describe('BUG-002: validateLayerAdvancement', () => {
     // Cascade backward does not require artifacts
     const result = await state.cascade('L3');
     expect(result.to).toBe('L3');
+  });
+});
+
+describe('File locking', () => {
+  test('acquireLock creates lock file', async () => {
+    const lockPath = path.join(TEST_ROOT, 'test.lock');
+    await acquireLock(lockPath);
+
+    const stat = await fs.stat(lockPath);
+    expect(stat.isFile()).toBe(true);
+
+    await releaseLock(lockPath);
+  });
+
+  test('releaseLock removes lock file', async () => {
+    const lockPath = path.join(TEST_ROOT, 'test.lock');
+    await acquireLock(lockPath);
+    await releaseLock(lockPath);
+
+    await expect(fs.stat(lockPath)).rejects.toThrow();
+  });
+
+  test('second acquireLock waits for release', async () => {
+    const lockPath = path.join(TEST_ROOT, 'test.lock');
+    await acquireLock(lockPath);
+
+    // Release after 100ms
+    setTimeout(() => releaseLock(lockPath), 100);
+
+    const start = Date.now();
+    await acquireLock(lockPath, { retryMs: 20, timeoutMs: 2000 });
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeGreaterThanOrEqual(50); // Had to wait
+    await releaseLock(lockPath);
+  });
+
+  test('acquireLock throws on timeout', async () => {
+    const lockPath = path.join(TEST_ROOT, 'test.lock');
+    await acquireLock(lockPath);
+
+    // Don't release — should timeout
+    await expect(
+      acquireLock(lockPath, { retryMs: 10, timeoutMs: 100, staleLockMs: 60000 })
+    ).rejects.toThrow('Failed to acquire lock');
+
+    await releaseLock(lockPath);
+  });
+
+  test('acquireLock breaks stale lock', async () => {
+    const lockPath = path.join(TEST_ROOT, 'test.lock');
+    // Write a stale lock (timestamp in the past)
+    await fs.writeFile(lockPath, JSON.stringify({ pid: 99999, timestamp: Date.now() - 60000 }));
+
+    // Should break the stale lock and succeed
+    await acquireLock(lockPath, { staleLockMs: 1000 });
+    await releaseLock(lockPath);
+  });
+
+  test('concurrent writes do not corrupt state', async () => {
+    const state1 = new StateManager(TEST_ROOT);
+    const state2 = new StateManager(TEST_ROOT);
+
+    await state1.read();
+    await state2.read();
+
+    state1.state.meta.project = 'Writer 1';
+    state2.state.meta.project = 'Writer 2';
+
+    // Both write concurrently — locking ensures no corruption
+    await Promise.all([
+      state1.write(),
+      state2.write()
+    ]);
+
+    // Read final state — should be one of the two, not corrupted
+    const finalState = new StateManager(TEST_ROOT);
+    const final = await finalState.read();
+    expect(['Writer 1', 'Writer 2']).toContain(final.meta.project);
+
+    // Lock file should be cleaned up
+    await expect(fs.stat(path.join(TEST_ROOT, '_status.md.lock'))).rejects.toThrow();
   });
 });
