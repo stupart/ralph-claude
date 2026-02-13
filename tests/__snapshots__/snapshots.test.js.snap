@@ -1,0 +1,550 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Context structure snapshots LAYER_AGENTS mapping matches snapshot: layer-agents-mapping 1`] = `
+{
+  "L1": "planner",
+  "L10": "judge",
+  "L11": "judge",
+  "L12": "planner",
+  "L2": "planner",
+  "L3": "planner",
+  "L4": "planner",
+  "L5": "planner",
+  "L6": "planner",
+  "L7": "planner",
+  "L8": "builder",
+  "L9": "judge",
+}
+`;
+
+exports[`Context structure snapshots LAYER_CONTEXT configuration matches snapshot: layer-context-config 1`] = `
+{
+  "L1": {
+    "description": "Gather inputs from brain dumps and existing documentation",
+    "load": [],
+  },
+  "L10": {
+    "description": "Review epic integration",
+    "load": [
+      "4-epics/epics.md",
+      "5-features/{{epic}}/*",
+    ],
+  },
+  "L11": {
+    "description": "Final review of entire project",
+    "load": [
+      "3-synthesis/*",
+      "4-epics/*",
+    ],
+  },
+  "L12": {
+    "description": "Retrospective and learnings",
+    "load": [
+      "*-*/*",
+    ],
+  },
+  "L2": {
+    "description": "Decompose inputs into patterns, quotes, and affinities",
+    "load": [
+      "1-input/*",
+    ],
+  },
+  "L3": {
+    "description": "Synthesize decomposition into JTBD, journeys, and architecture",
+    "load": [
+      "1-input/*",
+      "2-decomposition/*",
+    ],
+  },
+  "L4": {
+    "description": "Define epics based on synthesis",
+    "load": [
+      "3-synthesis/*",
+    ],
+  },
+  "L5": {
+    "description": "Plan features for each epic",
+    "load": [
+      "3-synthesis/*",
+      "4-epics/*",
+    ],
+  },
+  "L6": {
+    "description": "Specify tasks for each feature",
+    "load": [
+      "5-features/{{epic}}/*",
+    ],
+  },
+  "L7": {
+    "description": "Define subtasks for each task",
+    "load": [
+      "5-features/{{epic}}/{{feature}}.md",
+      "6-tasks/{{epic}}/{{feature}}/*",
+    ],
+  },
+  "L8": {
+    "description": "Implement subtasks",
+    "load": [
+      "7-subtasks/{{epic}}/{{feature}}/{{task}}.md",
+    ],
+  },
+  "L9": {
+    "description": "Review completed feature",
+    "load": [
+      "5-features/{{epic}}/{{feature}}.md",
+      "7-subtasks/{{epic}}/{{feature}}/*",
+    ],
+  },
+}
+`;
+
+exports[`Iteration learning prompt snapshot empty iteration learning matches snapshot: iteration-learning-empty 1`] = `""`;
+
+exports[`Iteration learning prompt snapshot iteration learning section matches snapshot: iteration-learning 1`] = `
+"
+---
+
+## Lessons from Previous Iteration (iteration 3)
+
+The following issues were identified in the previous review. You MUST address all of them in this iteration. Do NOT repeat these mistakes:
+
+1. **[MINOR]** Missing unit tests
+   Auth module needs tests
+2. **[MAJOR]** Wrong API design
+3. **[ESCALATE]** Security vulnerability
+   SQL injection in query builder
+
+**Priority:** Fix the highest-severity issues first (ESCALATE > MAJOR > MINOR).
+"
+`;
+
+exports[`Layer instructions snapshots L1 layer instructions match snapshot: L1-instructions 1`] = `
+"## Layer L1 Instructions
+
+**Goal:** Gather inputs from brain dumps and existing documentation
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Read all files in /1-input/
+2. Identify key themes and requirements
+3. Note any gaps or questions"
+`;
+
+exports[`Layer instructions snapshots L2 layer instructions match snapshot: L2-instructions 1`] = `
+"## Layer L2 Instructions
+
+**Goal:** Decompose inputs into patterns, quotes, and affinities
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Extract quotes from input documents
+2. Identify patterns across inputs
+3. Create affinity groups
+4. Document tensions/contradictions"
+`;
+
+exports[`Layer instructions snapshots L3 layer instructions match snapshot: L3-instructions 1`] = `
+"## Layer L3 Instructions
+
+**Goal:** Synthesize decomposition into JTBD, journeys, and architecture
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Create Jobs to Be Done (minimum 3)
+2. Map user journeys (minimum 2)
+3. Document architecture decisions
+4. Note constraints"
+`;
+
+exports[`Layer instructions snapshots L4 layer instructions match snapshot: L4-instructions 1`] = `
+"## Layer L4 Instructions
+
+**Goal:** Define epics based on synthesis
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define epics based on JTBD (minimum 3)
+2. Ensure full JTBD coverage
+3. Document dependencies between epics"
+`;
+
+exports[`Layer instructions snapshots L5 layer instructions match snapshot: L5-instructions 1`] = `
+"## Layer L5 Instructions
+
+**Goal:** Plan features for each epic
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define features for current epic (minimum 3)
+2. Each feature needs requirements and acceptance criteria
+3. Plan tasks for each feature"
+`;
+
+exports[`Layer instructions snapshots L6 layer instructions match snapshot: L6-instructions 1`] = `
+"## Layer L6 Instructions
+
+**Goal:** Specify tasks for each feature
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define tasks for current feature (minimum 3)
+2. Each task should be 15-30 min of work
+3. Specify files to modify and verification criteria"
+`;
+
+exports[`Layer instructions snapshots L7 layer instructions match snapshot: L7-instructions 1`] = `
+"## Layer L7 Instructions
+
+**Goal:** Define subtasks for each task
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define subtasks for each task (minimum 2)
+2. Each subtask must be atomic and verifiable
+3. Include code patterns and file paths"
+`;
+
+exports[`Layer instructions snapshots L8 layer instructions match snapshot: L8-instructions 1`] = `
+"## Layer L8 Instructions
+
+**Goal:** Implement subtasks
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Implement each subtask exactly as specified
+2. Test after each change
+3. Commit at subtask boundaries"
+`;
+
+exports[`Layer instructions snapshots L9 layer instructions match snapshot: L9-instructions 1`] = `
+"## Layer L9 Instructions
+
+**Goal:** Review completed feature
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Review the implemented feature via code review and tests
+2. If /chrome is available, do a visual UX walkthrough. Otherwise verify via tests and code inspection.
+3. Verify all acceptance criteria
+4. Issue PASS or ITERATE with severity"
+`;
+
+exports[`Layer instructions snapshots L10 layer instructions match snapshot: L10-instructions 1`] = `
+"## Layer L10 Instructions
+
+**Goal:** Review epic integration
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Review epic integration via code review
+2. Test cross-feature interactions
+3. If /chrome is available, test UX integration. Otherwise verify via code.
+4. Verify epic goal is met
+5. Issue PASS or ITERATE with severity"
+`;
+
+exports[`Layer instructions snapshots L11 layer instructions match snapshot: L11-instructions 1`] = `
+"## Layer L11 Instructions
+
+**Goal:** Final review of entire project
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Final review of entire project
+2. Walk through all user journeys via tests and code review
+3. If /chrome is available, visual walkthrough. Otherwise verify via code/tests.
+4. Verify ship-worthiness
+5. Issue PASS or ITERATE with severity"
+`;
+
+exports[`Layer instructions snapshots L12 layer instructions match snapshot: L12-instructions 1`] = `
+"## Layer L12 Instructions
+
+**Goal:** Retrospective and learnings
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Document what was learned
+2. Identify methodology improvements
+3. Note what worked and what didn't
+4. Archive project artifacts"
+`;
+
+exports[`Prompt assembly snapshots L1 prompt assembly matches snapshot: L1-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L1 Instructions
+
+**Goal:** Gather inputs from brain dumps and existing documentation
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Read all files in /1-input/
+2. Identify key themes and requirements
+3. Note any gaps or questions"
+`;
+
+exports[`Prompt assembly snapshots L2 prompt assembly matches snapshot: L2-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L2 Instructions
+
+**Goal:** Decompose inputs into patterns, quotes, and affinities
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Extract quotes from input documents
+2. Identify patterns across inputs
+3. Create affinity groups
+4. Document tensions/contradictions"
+`;
+
+exports[`Prompt assembly snapshots L3 prompt assembly matches snapshot: L3-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L3 Instructions
+
+**Goal:** Synthesize decomposition into JTBD, journeys, and architecture
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Create Jobs to Be Done (minimum 3)
+2. Map user journeys (minimum 2)
+3. Document architecture decisions
+4. Note constraints"
+`;
+
+exports[`Prompt assembly snapshots L4 prompt assembly matches snapshot: L4-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L4 Instructions
+
+**Goal:** Define epics based on synthesis
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define epics based on JTBD (minimum 3)
+2. Ensure full JTBD coverage
+3. Document dependencies between epics"
+`;
+
+exports[`Prompt assembly snapshots L5 prompt assembly matches snapshot: L5-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L5 Instructions
+
+**Goal:** Plan features for each epic
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define features for current epic (minimum 3)
+2. Each feature needs requirements and acceptance criteria
+3. Plan tasks for each feature"
+`;
+
+exports[`Prompt assembly snapshots L6 prompt assembly matches snapshot: L6-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L6 Instructions
+
+**Goal:** Specify tasks for each feature
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define tasks for current feature (minimum 3)
+2. Each task should be 15-30 min of work
+3. Specify files to modify and verification criteria"
+`;
+
+exports[`Prompt assembly snapshots L7 prompt assembly matches snapshot: L7-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L7 Instructions
+
+**Goal:** Define subtasks for each task
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Define subtasks for each task (minimum 2)
+2. Each subtask must be atomic and verifiable
+3. Include code patterns and file paths"
+`;
+
+exports[`Prompt assembly snapshots L8 prompt assembly matches snapshot: L8-prompt 1`] = `
+"You are a builder agent for the Layer Cake methodology.
+
+## Layer L8 Instructions
+
+**Goal:** Implement subtasks
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Implement each subtask exactly as specified
+2. Test after each change
+3. Commit at subtask boundaries"
+`;
+
+exports[`Prompt assembly snapshots L9 prompt assembly matches snapshot: L9-prompt 1`] = `
+"You are a judge agent for the Layer Cake methodology.
+
+## Layer L9 Instructions
+
+**Goal:** Review completed feature
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Review the implemented feature via code review and tests
+2. If /chrome is available, do a visual UX walkthrough. Otherwise verify via tests and code inspection.
+3. Verify all acceptance criteria
+4. Issue PASS or ITERATE with severity"
+`;
+
+exports[`Prompt assembly snapshots L10 prompt assembly matches snapshot: L10-prompt 1`] = `
+"You are a judge agent for the Layer Cake methodology.
+
+## Layer L10 Instructions
+
+**Goal:** Review epic integration
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Review epic integration via code review
+2. Test cross-feature interactions
+3. If /chrome is available, test UX integration. Otherwise verify via code.
+4. Verify epic goal is met
+5. Issue PASS or ITERATE with severity"
+`;
+
+exports[`Prompt assembly snapshots L11 prompt assembly matches snapshot: L11-prompt 1`] = `
+"You are a judge agent for the Layer Cake methodology.
+
+## Layer L11 Instructions
+
+**Goal:** Final review of entire project
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Final review of entire project
+2. Walk through all user journeys via tests and code review
+3. If /chrome is available, visual walkthrough. Otherwise verify via code/tests.
+4. Verify ship-worthiness
+5. Issue PASS or ITERATE with severity"
+`;
+
+exports[`Prompt assembly snapshots L12 prompt assembly matches snapshot: L12-prompt 1`] = `
+"You are a planner agent for the Layer Cake methodology.
+
+## Layer L12 Instructions
+
+**Goal:** Retrospective and learnings
+
+**Current Epic:** test-epic
+**Current Feature:** test-feature
+**Current Task:** test-task
+
+1. Document what was learned
+2. Identify methodology improvements
+3. Note what worked and what didn't
+4. Archive project artifacts"
+`;
+
+exports[`Tool permissions snapshots builder permissions match snapshot: builder-permissions 1`] = `
+{
+  "allowed": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "NotebookEdit",
+  ],
+  "forbidden": [
+    "/chrome",
+  ],
+}
+`;
+
+exports[`Tool permissions snapshots judge permissions match snapshot: judge-permissions 1`] = `
+{
+  "allowed": [
+    "Read",
+    "Glob",
+    "Grep",
+  ],
+  "forbidden": [
+    "Write",
+    "Edit",
+    "NotebookEdit",
+  ],
+  "limited": {
+    "Bash": "tests_only",
+  },
+  "optional": [
+    "/chrome",
+  ],
+}
+`;
+
+exports[`Tool permissions snapshots planner permissions match snapshot: planner-permissions 1`] = `
+{
+  "allowed": [
+    "Read",
+    "Write",
+    "Glob",
+    "Grep",
+  ],
+  "forbidden": [
+    "Edit",
+    "Bash",
+    "NotebookEdit",
+    "/chrome",
+  ],
+}
+`;
