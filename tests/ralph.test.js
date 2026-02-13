@@ -6,7 +6,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
-const { Ralph, CostTracker } = require('../lib/ralph');
+const { Ralph, CostTracker, LayerTimer } = require('../lib/ralph');
 const { LAYERS } = require('../lib/state-machine');
 
 const TEMPLATES_PATH = path.resolve(__dirname, '..', 'templates', 'agents');
@@ -473,5 +473,93 @@ describe('CostTracker', () => {
     tracker.record('L1');
     expect(tracker.getSummary().layers.L1.calls).toBe(1);
     expect(tracker.getSummary().layers.L1.inputTokens).toBe(0);
+  });
+});
+
+describe('LayerTimer', () => {
+  test('tracks start and end timestamps', () => {
+    const timer = new LayerTimer();
+    timer.start('L1');
+    timer.end('L1');
+
+    const summary = timer.getSummary();
+    expect(summary.layers.L1).toBeDefined();
+    expect(summary.layers.L1.runs).toBe(1);
+    expect(summary.layers.L1.durationMs).toBeGreaterThanOrEqual(0);
+    expect(summary.layers.L1.lastStartedAt).toBeDefined();
+    expect(summary.layers.L1.lastEndedAt).toBeDefined();
+  });
+
+  test('accumulates duration across multiple runs', async () => {
+    const timer = new LayerTimer();
+    timer.start('L1');
+    await new Promise(r => setTimeout(r, 10));
+    timer.end('L1');
+
+    timer.start('L1');
+    await new Promise(r => setTimeout(r, 10));
+    timer.end('L1');
+
+    const summary = timer.getSummary();
+    expect(summary.layers.L1.runs).toBe(2);
+    expect(summary.layers.L1.durationMs).toBeGreaterThanOrEqual(15);
+    expect(summary.totalDurationMs).toBeGreaterThanOrEqual(15);
+  });
+
+  test('end without start does nothing', () => {
+    const timer = new LayerTimer();
+    timer.end('L1'); // No start
+    expect(timer.getSummary().totalDurationMs).toBe(0);
+  });
+
+  test('reset clears all data', () => {
+    const timer = new LayerTimer();
+    timer.start('L1');
+    timer.end('L1');
+    timer.reset();
+
+    const summary = timer.getSummary();
+    expect(Object.keys(summary.layers)).toHaveLength(0);
+    expect(summary.totalDurationMs).toBe(0);
+  });
+
+  test('tracks multiple layers independently', () => {
+    const timer = new LayerTimer();
+    timer.start('L1');
+    timer.end('L1');
+    timer.start('L2');
+    timer.end('L2');
+
+    const summary = timer.getSummary();
+    expect(summary.layers.L1).toBeDefined();
+    expect(summary.layers.L2).toBeDefined();
+    expect(summary.layers.L1.runs).toBe(1);
+    expect(summary.layers.L2.runs).toBe(1);
+  });
+});
+
+describe('Ralph timing integration', () => {
+  test('getStatus includes timing summary', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+
+    const status = await ralph.getStatus();
+    expect(status.timings).toBeDefined();
+    expect(status.timings.totalDurationMs).toBe(0);
+    expect(status.timings.layers).toBeDefined();
+  });
+
+  test('runLayerCycle records layer timing', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+
+    const executor = createMockExecutor({ L1: { verdict: 'PASS' } });
+    await ralph.runLayerCycle(executor);
+
+    const summary = ralph.timings.getSummary();
+    expect(summary.layers.L1).toBeDefined();
+    expect(summary.layers.L1.runs).toBe(1);
+    expect(summary.layers.L1.durationMs).toBeGreaterThanOrEqual(0);
+    expect(summary.totalDurationMs).toBeGreaterThanOrEqual(0);
   });
 });
