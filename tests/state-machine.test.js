@@ -5,7 +5,7 @@
  * Converted from custom runner to jest in gen4.
  */
 
-const { StateManager, LAYERS, LAYER_FOLDERS, DEFAULT_STATE, acquireLock, releaseLock } = require('../lib/state-machine');
+const { StateManager, LAYERS, LAYER_DEPS, LAYER_FOLDERS, DEFAULT_STATE, acquireLock, releaseLock } = require('../lib/state-machine');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
@@ -320,5 +320,59 @@ describe('File locking', () => {
 
     // Lock file should be cleaned up
     await expect(fs.stat(path.join(TEST_ROOT, '_status.md.lock'))).rejects.toThrow();
+  });
+});
+
+describe('LAYER_DEPS', () => {
+  test('has entries for all 12 layers', () => {
+    for (let i = 1; i <= 12; i++) {
+      expect(LAYER_DEPS[`L${i}`]).toBeDefined();
+      expect(Array.isArray(LAYER_DEPS[`L${i}`])).toBe(true);
+    }
+  });
+
+  test('L1 has no dependencies', () => {
+    expect(LAYER_DEPS.L1).toEqual([]);
+  });
+
+  test('L2 depends on L1', () => {
+    expect(LAYER_DEPS.L2).toEqual(['L1']);
+  });
+
+  test('L3 depends on L1 and L2', () => {
+    expect(LAYER_DEPS.L3).toEqual(['L1', 'L2']);
+  });
+
+  test('L8 depends on L7 (subtasks)', () => {
+    expect(LAYER_DEPS.L8).toEqual(['L7']);
+  });
+
+  test('L9 depends on L5 and L7 (feature specs + subtasks)', () => {
+    expect(LAYER_DEPS.L9).toContain('L5');
+    expect(LAYER_DEPS.L9).toContain('L7');
+  });
+
+  test('all dependency references are valid layer IDs', () => {
+    for (const [layerId, deps] of Object.entries(LAYER_DEPS)) {
+      for (const dep of deps) {
+        expect(LAYERS[dep]).toBeDefined();
+      }
+    }
+  });
+
+  test('no layer depends on itself', () => {
+    for (const [layerId, deps] of Object.entries(LAYER_DEPS)) {
+      expect(deps).not.toContain(layerId);
+    }
+  });
+
+  test('no layer depends on a later layer', () => {
+    for (const [layerId, deps] of Object.entries(LAYER_DEPS)) {
+      const layerNum = parseInt(layerId.slice(1));
+      for (const dep of deps) {
+        const depNum = parseInt(dep.slice(1));
+        expect(depNum).toBeLessThan(layerNum);
+      }
+    }
   });
 });

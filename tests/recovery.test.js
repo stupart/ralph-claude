@@ -254,3 +254,56 @@ describe('Recovery logging', () => {
     expect(rm.log[0].message).toBeDefined();
   });
 });
+
+describe('checkDependenciesMet', () => {
+  test('L1 has no dependencies so always passes', async () => {
+    const rm = new RecoveryManager(TEST_ROOT);
+    const scan = await rm.scanFilesystem();
+    const result = rm.checkDependenciesMet('L1', scan);
+    expect(result.canResume).toBe(true);
+    expect(result.missingDeps).toEqual([]);
+  });
+
+  test('L2 passes when L1 artifacts exist', async () => {
+    await createLayerFolders(['L1']);
+    const rm = new RecoveryManager(TEST_ROOT);
+    const scan = await rm.scanFilesystem();
+    const result = rm.checkDependenciesMet('L2', scan);
+    expect(result.canResume).toBe(true);
+  });
+
+  test('L2 fails when L1 artifacts missing', async () => {
+    const rm = new RecoveryManager(TEST_ROOT);
+    const scan = await rm.scanFilesystem();
+    const result = rm.checkDependenciesMet('L2', scan);
+    expect(result.canResume).toBe(false);
+    expect(result.missingDeps).toContain('L1');
+  });
+
+  test('L4 passes when L3 exists but L1/L2 not required directly', async () => {
+    await createLayerFolders(['L3']);
+    const rm = new RecoveryManager(TEST_ROOT);
+    const scan = await rm.scanFilesystem();
+    const result = rm.checkDependenciesMet('L4', scan);
+    expect(result.canResume).toBe(true);
+  });
+
+  test('L9 requires both L5 and L7', async () => {
+    await createLayerFolders(['L5']);
+    const rm = new RecoveryManager(TEST_ROOT);
+    const scan = await rm.scanFilesystem();
+    const result = rm.checkDependenciesMet('L9', scan);
+    expect(result.canResume).toBe(false);
+    expect(result.missingDeps).toContain('L7');
+  });
+
+  test('reconcile includes dependency check in plan', async () => {
+    await createLayerFolders(['L1', 'L2']);
+    await writeStatusAt('L3');
+
+    const rm = new RecoveryManager(TEST_ROOT);
+    const plan = await rm.reconcile();
+    expect(plan.dependencyCheck).toBeDefined();
+    expect(plan.dependencyCheck.canResume).toBe(true);
+  });
+});
