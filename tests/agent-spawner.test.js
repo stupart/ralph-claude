@@ -5,7 +5,7 @@
  * Converted from custom runner to jest in gen4.
  */
 
-const { AgentSpawner, TemplateCache, AGENT_MODEL, AGENT_CONFIGS, LAYER_AGENTS, TOOL_PERMISSIONS, LAYER_CONTEXT, normalizeAgentType } = require('../lib/agent-spawner');
+const { AgentSpawner, TemplateCache, AGENT_MODEL, AGENT_CONFIGS, LAYER_AGENTS, TOOL_PERMISSIONS, LAYER_CONTEXT, MODEL_CONTEXT_WINDOWS, DEFAULT_CONTEXT_BUDGET_FRACTION, normalizeAgentType } = require('../lib/agent-spawner');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
@@ -335,5 +335,90 @@ describe('Cached prompt loading', () => {
     const second = await spawner.readCachedFile(filePath);
     expect(second).not.toBe(first);
     expect(second).toContain('Updated planner template');
+  });
+});
+
+describe('Context budget estimation', () => {
+  test('estimateTokens returns approximate token count', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    // ~4 chars per token
+    expect(spawner.estimateTokens('abcd')).toBe(1);
+    expect(spawner.estimateTokens('abcdefgh')).toBe(2);
+    expect(spawner.estimateTokens('')).toBe(0);
+    expect(spawner.estimateTokens(null)).toBe(0);
+    expect(spawner.estimateTokens(undefined)).toBe(0);
+  });
+
+  test('estimateContextBudget reports within budget for small prompts', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const config = {
+      prompt: 'Short prompt',
+      model: 'opus',
+      context: { files: [] }
+    };
+    const result = spawner.estimateContextBudget(config);
+    expect(result.withinBudget).toBe(true);
+    expect(result.warning).toBeNull();
+    expect(result.contextWindow).toBe(200000);
+    expect(result.budgetFraction).toBe(0.4);
+    expect(result.budgetTokens).toBe(80000);
+  });
+
+  test('estimateContextBudget warns when budget exceeded', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    // Create a prompt that exceeds 80k tokens (~320k chars)
+    const longPrompt = 'x'.repeat(400000);
+    const config = {
+      prompt: longPrompt,
+      model: 'opus',
+      context: { files: [] }
+    };
+    const result = spawner.estimateContextBudget(config);
+    expect(result.withinBudget).toBe(false);
+    expect(result.warning).toContain('Context budget exceeded');
+    expect(result.estimatedTokens).toBeGreaterThan(80000);
+  });
+
+  test('estimateContextBudget includes context files in estimate', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const config = {
+      prompt: 'Short',
+      model: 'opus',
+      context: { files: ['x'.repeat(400000)] }
+    };
+    const result = spawner.estimateContextBudget(config);
+    expect(result.withinBudget).toBe(false);
+    expect(result.estimatedTokens).toBeGreaterThan(80000);
+  });
+
+  test('estimateContextBudget respects custom budget fraction', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const config = {
+      prompt: 'x'.repeat(100000), // ~25k tokens
+      model: 'opus',
+      context: { files: [] }
+    };
+    // With 10% budget (20k tokens), should exceed
+    const result = spawner.estimateContextBudget(config, { budgetFraction: 0.1 });
+    expect(result.withinBudget).toBe(false);
+    expect(result.budgetTokens).toBe(20000);
+  });
+
+  test('createSpawnConfig includes contextBudget', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const config = await spawner.createSpawnConfig('L4', {});
+    expect(config.contextBudget).toBeDefined();
+    expect(config.contextBudget.estimatedTokens).toBeGreaterThan(0);
+    expect(config.contextBudget.withinBudget).toBe(true);
+  });
+
+  test('MODEL_CONTEXT_WINDOWS has entries for all models', () => {
+    expect(MODEL_CONTEXT_WINDOWS.opus).toBe(200000);
+    expect(MODEL_CONTEXT_WINDOWS.sonnet).toBe(200000);
+    expect(MODEL_CONTEXT_WINDOWS.haiku).toBe(200000);
+  });
+
+  test('DEFAULT_CONTEXT_BUDGET_FRACTION is 0.4', () => {
+    expect(DEFAULT_CONTEXT_BUDGET_FRACTION).toBe(0.4);
   });
 });
