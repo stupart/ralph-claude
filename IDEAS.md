@@ -2,45 +2,51 @@
 
 ## Notifications & Observability
 
-### Terminal Notifications (macOS)
-- `osascript` push notifications at key events: layer transitions, review verdicts, stalls, completion
+### Terminal Notifications (macOS) [DONE gen5]
+- ~~`osascript` push notifications~~ Uses `terminal-notifier` binary for push notifications at key events: layer transitions, review verdicts, stalls, completion
 - Low effort, immediate value for local dev
+- Implemented in `lib/notifier.js` with distinct sounds per event type
 
-### Stall Detection Watchdog
-- Background thread monitoring `_status.md` last-modified time
+### Stall Detection Watchdog [DONE gen5]
+- ~~Background thread~~ Polling monitor on `_status.md` last-modified time
 - Alert if no update in N minutes (configurable, default 10)
 - Would have caught both Chrome stalls during the skill tree meta-test
+- Implemented in `lib/stall-detector.js`, auto-started in `runProject()`
 
-### Structured Event Log
+### Structured Event Log [DONE gen5]
 - `_events.jsonl` alongside `_status.md` — machine-readable event stream
-- Each event: `{ timestamp, type, layer, chunk, verdict, message }`
+- Each event: `{ timestamp, type, layer, epic, verdict, message }`
 - Any tool can tail it for live updates
+- Implemented in `lib/event-logger.js`, integrated into `ralph.js`
 
-### Webhook Callback
-- `--webhook <URL>` flag that POSTs JSON on state changes
+### Webhook Callback [DONE gen5]
+- `options.webhookUrl` that POSTs JSON on state changes
 - Slack, Discord, or local endpoint integration
-- Payload: layer, chunk, verdict, iteration, blocker info
+- Payload: layer, epic, verdict, iteration, blocker info
+- Implemented in `lib/webhook.js` with retry and custom headers
 
 ## Orchestrator Improvements
 
-### Chunk Count Validation (BUG-001 fix)
+### Chunk Count Validation (BUG-001 fix) [DONE gen2]
 - L5 completion should verify chunk folder count matches L4 outline
 - L6 completion should verify all chunks have committed code
 - L7 should verify all chunks have `_review.md` with PASS
+- Replaced by epic/feature/task hierarchy with validator enforcement
 
-### Subprocess Timeout (BUG-003 fix)
-- Configurable timeout for Claude subprocess (default 15-20 min)
+### Subprocess Timeout (BUG-003 fix) [DONE gen5]
+- Configurable timeout for Claude subprocess (default 5 min)
 - Kill and retry on timeout, with event log entry
-- `--timeout <seconds>` CLI flag
+- AbortController signal + SIGTERM/SIGKILL enforcement
+- Implemented in `ralph.js` `runLayerCycle()` with `registerProcess()` callback
 
-### Playwright MCP as Default Browser Testing
+### Playwright MCP as Default Browser Testing [DONE gen3]
 - Already swapped `/chrome` for Playwright MCP in prompts
 - Consider detecting MCP availability before spawning review agents
-- Fallback chain: Playwright MCP → curl/tests → code review only
+- Fallback chain: Playwright MCP -> curl/tests -> code review only
 
-### Resume / Recovery
+### Resume / Recovery [DONE gen2]
 - `ralph resume` command that reads `_status.md` and picks up where it left off
-- Currently works implicitly (run just reads status) but should handle orphaned processes
+- Implemented in `lib/recovery.js` with reconciliation on startup
 
 ## Methodology Ideas
 
@@ -48,14 +54,15 @@
 - Chunks with no dependencies could be built in parallel (multiple Claude sessions)
 - Would need a job queue and merge strategy
 
-### Human-in-the-Loop Gates
+### Human-in-the-Loop Gates [DONE gen2]
 - Optional approval gates between layers (like Layer Cake's L3/L7 gates)
-- `--gate L5,L9` flag to pause and notify before proceeding
+- Implemented in state machine with `autoApproveGates` option
 
-### Cost Tracking
+### Cost Tracking [DONE gen4]
 - Track token usage per layer/iteration
 - Report total cost at completion
 - Help calibrate tier sizing (micro vs medium vs large)
+- Implemented in `ralph.js` `CostTracker` class
 
 ### Project Templates
 - `ralph init --template web-app` with pre-configured CLAUDE.md, chunk patterns, review criteria
