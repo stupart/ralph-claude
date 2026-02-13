@@ -64,6 +64,23 @@
 - Help calibrate tier sizing (micro vs medium vs large)
 - Implemented in `ralph.js` `CostTracker` class
 
-### Project Templates
-- `ralph init --template web-app` with pre-configured CLAUDE.md, chunk patterns, review criteria
-- Templates for: web app, API, CLI tool, library
+### Project Templates [DONE gen6]
+- `ralph init --template web-app` with pre-configured CLAUDE.md, brain-dump.md, _status.md, folder scaffolding
+- Implemented in `lib/templates.js` with `initProject()`, `listTemplates()`, `loadTemplate()`
+- Templates live in `templates/project-templates/<name>/` with `template.json` manifest
+- Variable resolution ({{DATE}}, {{PROJECT_NAME}}) with auto and prompt types
+
+### CLI Entry Point [DONE gen6]
+- `bin/ralph-cli.js` with commands: init, run, status, resume, cost
+- Argument parsing for --dir, --template, --verbose, --quiet, --auto-approve, --timeout
+- Integrates template system, recovery manager, state machine, and cost tracker
+
+### End-to-End Integration Tests [DONE gen6]
+- Mocked agents through full L1->L12 pipeline in `tests/e2e.test.js`
+- Error recovery integration tests in `tests/recovery-e2e.test.js`
+- Prompt template validation in `tests/prompt-templates.test.js`
+- 269 total tests across 15 suites (up from 180 in 10 suites)
+
+### Template Variable Documentation [DONE gen6]
+- Documented {{LAYER_INSTRUCTIONS}}, {{epic}}, {{feature}}, {{task}} in planner-base.md header comment
+- Instructions for adding new template variables
