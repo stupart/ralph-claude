@@ -1,0 +1,24 @@
+{
+  "name": "web-app",
+  "description": "Full-stack web application with frontend, backend, and database",
+  "tier": "small",
+  "folders": [
+    "1-input",
+    "2-decomposition",
+    "3-synthesis",
+    "4-epics",
+    "5-features",
+    "6-tasks",
+    "7-subtasks",
+    "8-analysis"
+  ],
+  "files": {
+    "CLAUDE.md": "CLAUDE.md",
+    "1-input/brain-dump.md": "brain-dump.md",
+    "_status.md": "_status.md"
+  },
+  "variables": {
+    "DATE": "auto:iso-date",
+    "PROJECT_NAME": "prompt:Project name"
+  }
+}
