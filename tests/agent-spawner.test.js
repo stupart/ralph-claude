@@ -556,3 +556,141 @@ describe('Context budget estimation', () => {
     expect(DEFAULT_CONTEXT_BUDGET_FRACTION).toBe(0.4);
   });
 });
+
+describe('resolveContext', () => {
+  test('L1 returns empty array (no dependencies)', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const parts = await spawner.resolveContext('L1', TEST_ROOT);
+    expect(parts).toEqual([]);
+  });
+
+  test('L5 resolves files from 3-synthesis and 4-epics directories', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    // Create dependency directories with known content
+    const synthDir = path.join(TEST_ROOT, '3-synthesis');
+    const epicsDir = path.join(TEST_ROOT, '4-epics');
+    await fs.mkdir(synthDir, { recursive: true });
+    await fs.mkdir(epicsDir, { recursive: true });
+    await fs.writeFile(path.join(synthDir, 'jtbd.md'), 'JTBD content');
+    await fs.writeFile(path.join(synthDir, 'architecture.md'), 'Architecture content');
+    await fs.writeFile(path.join(epicsDir, 'epic-1.md'), 'Epic 1 content');
+
+    const parts = await spawner.resolveContext('L5', TEST_ROOT);
+    expect(parts.length).toBe(3);
+    // Files sorted alphabetically within each dep
+    expect(parts[0].path).toBe(path.join('3-synthesis', 'architecture.md'));
+    expect(parts[1].path).toBe(path.join('3-synthesis', 'jtbd.md'));
+    expect(parts[2].path).toBe(path.join('4-epics', 'epic-1.md'));
+  });
+
+  test('files have ## File: header prefix', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const synthDir = path.join(TEST_ROOT, '3-synthesis');
+    await fs.mkdir(synthDir, { recursive: true });
+    await fs.writeFile(path.join(synthDir, 'jtbd.md'), 'JTBD content');
+
+    const parts = await spawner.resolveContext('L4', TEST_ROOT);
+    expect(parts[0].content).toContain('## File: 3-synthesis');
+    expect(parts[0].content).toContain('JTBD content');
+  });
+
+  test('missing directory returns empty with warning', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const spawner = new AgentSpawner(TEST_ROOT);
+    // Don't create the expected directory
+    const parts = await spawner.resolveContext('L4', TEST_ROOT);
+    expect(parts).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('directory not found'));
+    warnSpy.mockRestore();
+  });
+
+  test('token estimate matches estimateTokens math', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const synthDir = path.join(TEST_ROOT, '3-synthesis');
+    await fs.mkdir(synthDir, { recursive: true });
+    await fs.writeFile(path.join(synthDir, 'jtbd.md'), 'abcd'); // 4 chars
+
+    const parts = await spawner.resolveContext('L4', TEST_ROOT);
+    // Header + content, tokens = ceil(length / 4)
+    expect(parts[0].tokens).toBe(spawner.estimateTokens(parts[0].content));
+  });
+});
+
+describe('truncateContext', () => {
+  test('removes last file when total exceeds budget', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const parts = [
+      { path: 'a.md', content: 'a'.repeat(200000), tokens: 50000 },
+      { path: 'b.md', content: 'b'.repeat(200000), tokens: 50000 },
+      { path: 'c.md', content: 'c'.repeat(40000), tokens: 10000 },
+    ];
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    // Total 110000 > 80000 budget
+    const result = spawner.truncateContext(parts, 80000);
+    expect(result).not.toContain('c'.repeat(100)); // c.md was removed
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('truncating c.md'));
+    warnSpy.mockRestore();
+  });
+
+  test('content-truncates single file exceeding budget', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const parts = [
+      { path: 'big.md', content: 'x'.repeat(1000000), tokens: 250000 },
+    ];
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const result = spawner.truncateContext(parts, 80000);
+    expect(result.length).toBeLessThanOrEqual(80000 * 4);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('content-truncated'));
+    warnSpy.mockRestore();
+  });
+
+  test('passes through context under budget unchanged', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const parts = [
+      { path: 'a.md', content: 'small content', tokens: 4 },
+    ];
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const result = spawner.truncateContext(parts, 80000);
+    expect(result).toBe('small content');
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  test('empty array input returns empty string', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    expect(spawner.truncateContext([], 80000)).toBe('');
+  });
+
+  test('default budget is 80000 tokens', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const parts = [
+      { path: 'a.md', content: 'a', tokens: 1 },
+    ];
+    // With default budget (200000 * 0.4 = 80000), 1 token should pass
+    const result = spawner.truncateContext(parts);
+    expect(result).toBe('a');
+  });
+});
+
+describe('createSpawnConfig integration with context resolution', () => {
+  test('L5 prompt contains actual file contents when deps exist', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const synthDir = path.join(TEST_ROOT, '3-synthesis');
+    const epicsDir = path.join(TEST_ROOT, '4-epics');
+    await fs.mkdir(synthDir, { recursive: true });
+    await fs.mkdir(epicsDir, { recursive: true });
+    await fs.writeFile(path.join(synthDir, 'jtbd.md'), 'Test JTBD content here');
+    await fs.writeFile(path.join(epicsDir, 'epic-1.md'), 'Test Epic 1 content');
+
+    const config = await spawner.createSpawnConfig('L5', {});
+    expect(config.prompt).toContain('## File: 3-synthesis');
+    expect(config.prompt).toContain('Test JTBD content here');
+    expect(config.prompt).toContain('Test Epic 1 content');
+  });
+
+  test('L1 config has no context section', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const config = await spawner.createSpawnConfig('L1', {});
+    expect(config.prompt).not.toContain('## Context from Previous Layers');
+  });
+});
