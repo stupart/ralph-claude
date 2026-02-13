@@ -1,0 +1,2715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍰 Layer Cake (Ralph V3)</title>
+    <style>
+        :root {
+            --black: #1a1a1a;
+            --white: #fafafa;
+            --gray-100: #f5f5f5;
+            --gray-200: #e5e5e5;
+            --gray-300: #d4d4d4;
+            --gray-400: #a3a3a3;
+            --gray-500: #737373;
+            --gray-600: #525252;
+            --accent: #ff6b35;
+            --pass: #22c55e;
+            --fail: #ef4444;
+            --review: #8b5cf6;
+            --planner: #10b981;
+            --builder: #3b82f6;
+            --user: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: var(--white);
+            color: var(--black);
+            line-height: 1.5;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        header {
+            background: var(--black);
+            color: var(--white);
+            padding: 32px 40px;
+        }
+
+        header h1 {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--gray-400);
+            margin-bottom: 8px;
+        }
+
+        header .title {
+            font-size: 32px;
+            font-weight: 300;
+            letter-spacing: -0.01em;
+        }
+
+        /* Blueprint Container */
+        .blueprint {
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        /* Phase Labels (Top Row) */
+        .phase-row {
+            display: grid;
+            grid-template-columns: 120px repeat(12, 1fr);
+            gap: 2px;
+            margin-bottom: 2px;
+            min-width: 1600px;
+        }
+
+        .phase-label {
+            background: var(--black);
+            color: var(--white);
+            padding: 12px 8px;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .phase-label.corner {
+            background: transparent;
+        }
+
+        .phase-label .num {
+            font-size: 18px;
+            font-weight: 300;
+            display: block;
+            margin-bottom: 2px;
+            letter-spacing: 0;
+        }
+
+        /* Swimlane */
+        .swimlane {
+            display: grid;
+            grid-template-columns: 120px repeat(12, 1fr);
+            gap: 2px;
+            margin-bottom: 2px;
+            min-width: 1600px;
+        }
+
+        .lane-label {
+            background: var(--gray-100);
+            padding: 20px 16px;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            writing-mode: vertical-lr;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-500);
+        }
+
+        .lane-label.user { border-left: 3px solid var(--user); }
+        .lane-label.orchestrator { border-left: 3px solid var(--accent); }
+        .lane-label.planner { border-left: 3px solid #10b981; }
+        .lane-label.builder { border-left: 3px solid var(--builder); }
+        .lane-label.reviewer { border-left: 3px solid var(--review); }
+
+        .lane-cell {
+            background: var(--gray-100);
+            padding: 10px;
+            min-height: 100px;
+            position: relative;
+        }
+
+        .lane-cell.empty {
+            background: repeating-linear-gradient(
+                45deg,
+                var(--gray-100),
+                var(--gray-100) 4px,
+                var(--gray-200) 4px,
+                var(--gray-200) 8px
+            );
+        }
+
+        .lane-cell.highlight {
+            background: rgba(255, 107, 53, 0.08);
+        }
+
+        /* Activity Boxes */
+        .activity {
+            background: var(--white);
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 6px;
+            font-size: 11px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .activity.user { border-left: 3px solid var(--user); }
+        .activity.plan { border-left: 3px solid #10b981; }
+        .activity.build { border-left: 3px solid var(--builder); }
+        .activity.review { border-left: 3px solid var(--review); }
+        .activity.orchestrator { border-left: 3px solid var(--accent); }
+
+        .activity strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .activity .output {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 10px;
+            color: var(--gray-500);
+            margin-top: 8px;
+        }
+
+        /* Flow Arrows */
+        .flow-arrow {
+            position: absolute;
+            width: 30px;
+            height: 2px;
+            background: var(--gray-400);
+            right: -16px;
+            top: 50%;
+        }
+
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            border: 5px solid transparent;
+            border-left-color: var(--gray-400);
+        }
+
+        /* Section Divider */
+        .section-title {
+            background: var(--black);
+            color: var(--white);
+            padding: 12px 20px;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin: 40px 0 20px 0;
+        }
+
+        /* Nested Hierarchy Diagram */
+        .hierarchy-section {
+            margin: 40px 0;
+            padding: 0 40px;
+        }
+
+        .hierarchy-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-width: 800px;
+        }
+
+        .hierarchy-level {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .hierarchy-label {
+            width: 120px;
+            padding: 16px;
+            background: var(--black);
+            color: var(--white);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hierarchy-content {
+            flex: 1;
+            padding: 16px;
+            background: var(--gray-100);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .hierarchy-box {
+            padding: 12px 16px;
+            background: var(--white);
+            border-radius: 4px;
+            font-size: 13px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .hierarchy-box.stage { border-left: 3px solid var(--accent); }
+        .hierarchy-box.chunk { border-left: 3px solid var(--builder); }
+        .hierarchy-box.task { border-left: 3px solid var(--pass); }
+
+        .hierarchy-arrow {
+            color: var(--gray-400);
+            font-size: 20px;
+        }
+
+        .hierarchy-breakdown {
+            margin-left: 120px;
+            background: var(--gray-200);
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--gray-500);
+            border-left: 2px solid var(--gray-400);
+        }
+
+        /* GAN Feedback Loop */
+        .gan-section {
+            margin: 40px;
+            background: var(--black);
+            border-radius: 8px;
+            padding: 32px;
+            color: var(--white);
+        }
+
+        .gan-title {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--gray-400);
+            margin-bottom: 24px;
+        }
+
+        .gan-flow {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .gan-node {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .gan-node.builder { border: 2px solid var(--builder); }
+        .gan-node.reviewer { border: 2px solid var(--review); }
+        .gan-node.pass { border: 2px solid var(--pass); background: rgba(34, 197, 94, 0.1); }
+        .gan-node.fail { border: 2px solid var(--fail); background: rgba(239, 68, 68, 0.1); }
+
+        .gan-node strong {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .gan-node span {
+            font-size: 11px;
+            color: var(--gray-400);
+        }
+
+        .gan-arrow {
+            color: var(--gray-500);
+            font-size: 24px;
+        }
+
+        .gan-feedback {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .feedback-path {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        .feedback-badge {
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .feedback-badge.minor { background: #fef3c7; color: #92400e; }
+        .feedback-badge.major { background: #fee2e2; color: #991b1b; }
+        .feedback-badge.escalate { background: var(--gray-600); color: var(--white); }
+
+        /* State Machine */
+        .state-section {
+            margin: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .state-card {
+            background: var(--gray-100);
+            padding: 24px;
+            border-radius: 4px;
+        }
+
+        .state-card h3 {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gray-400);
+            margin-bottom: 16px;
+        }
+
+        .state-card pre {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 11px;
+            line-height: 1.8;
+            color: var(--gray-600);
+        }
+
+        .state-card .highlight { color: var(--accent); }
+        .state-card .comment { color: var(--gray-400); }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 24px;
+            padding: 16px 40px;
+            background: var(--gray-100);
+            border-top: 1px solid var(--gray-200);
+            margin-top: 40px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .legend-dot.user { background: var(--user); }
+        .legend-dot.orchestrator { background: var(--accent); }
+        .legend-dot.builder { background: var(--builder); }
+        .legend-dot.reviewer { background: var(--review); }
+
+        /* Collapsible Sections */
+        .section-title.collapsible {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-title.collapsible:hover {
+            background: #2a2a2a;
+        }
+        .toggle-icon {
+            font-size: 12px;
+            transition: transform 0.2s;
+            margin-right: 8px;
+        }
+        .section-title.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+        }
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        /* Clickable hierarchy labels */
+        .hierarchy-label.clickable {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .hierarchy-label.clickable:hover {
+            color: var(--accent);
+            background: rgba(255,107,53,0.1);
+        }
+
+        /* Clickable Activities */
+        .activity.clickable {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .activity.clickable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .activity.clickable:active {
+            transform: translateY(0);
+        }
+
+        /* Layer Modal */
+        .layer-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+        }
+        .layer-modal.open {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            position: relative;
+            background: var(--white);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--gray-100);
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-500);
+            transition: all 0.15s;
+            z-index: 10;
+        }
+        .modal-close:hover {
+            background: var(--gray-200);
+            color: var(--black);
+        }
+        .modal-header {
+            padding: 24px 24px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .modal-layer-id {
+            font-size: 28px;
+            font-weight: 200;
+            color: var(--accent);
+        }
+        .modal-layer-name {
+            font-size: 20px;
+            font-weight: 500;
+        }
+        .modal-actor-badge {
+            margin-left: auto;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-section {
+            margin-bottom: 24px;
+        }
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+        .modal-section-title {
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--gray-400);
+            margin-bottom: 8px;
+        }
+        .modal-section-content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--black);
+        }
+        .modal-section-content code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+        .modal-outputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .modal-output-tag {
+            background: var(--gray-100);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 11px;
+        }
+        .modal-flow {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .modal-flow-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .modal-flow-item.pass { background: rgba(34,197,94,0.15); color: #16a34a; }
+        .modal-flow-item.minor { background: rgba(251,191,36,0.15); color: #d97706; }
+        .modal-flow-item.major { background: rgba(239,68,68,0.15); color: #dc2626; }
+        .modal-flow-item.escalate { background: rgba(139,92,246,0.15); color: #7c3aed; }
+        .modal-prompt {
+            background: var(--black);
+            color: var(--gray-300);
+            padding: 16px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .modal-tools {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .modal-tool-tag {
+            background: var(--builder);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .modal-gate-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Human Gate Cells - Gold border for L3 and L7 */
+        .lane-cell.human-gate {
+            border: 2px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.08);
+        }
+
+        .activity.gate-activity {
+            border-left: 3px solid #f59e0b;
+            background: #fffbeb;
+        }
+
+        /* Reviewer Active Cells - Purple highlight for L9-L11 */
+        .lane-cell.reviewer-active {
+            background: rgba(139, 92, 246, 0.12);
+        }
+
+        /* Phase badge in header */
+        .phase-badge {
+            font-size: 8px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Dynamic Cascade Rules Styling */
+        .cascade-rules-dynamic {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            margin-top: 16px;
+        }
+
+        .cascade-rule {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .cascade-label {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            min-width: 90px;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+
+        .cascade-minor .cascade-label {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .cascade-major .cascade-label {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .cascade-escalate .cascade-label {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .cascade-max .cascade-label {
+            background: var(--gray-600);
+            color: var(--white);
+        }
+
+        .cascade-arrow {
+            color: var(--gray-400);
+            font-size: 16px;
+        }
+
+        .cascade-desc {
+            color: var(--gray-300);
+        }
+
+        .cascade-value {
+            font-size: 20px;
+            font-weight: 300;
+            color: var(--accent);
+        }
+
+        /* Fail target badges */
+        .fail-target {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .fail-minor { background: rgba(251, 191, 36, 0.15); color: #d97706; }
+        .fail-major { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+        .fail-escalate { background: rgba(139, 92, 246, 0.15); color: #7c3aed; }
+    </style>
+    <script>
+    /**
+     * 🍰 LAYER CAKE - Single Source of Truth
+     *
+     * This data structure defines the entire Ralph V3 methodology for autonomous
+     * code generation through nested planning and adversarial review.
+     *
+     * All visualizations on this page render from this data.
+     * Ralph itself imports this spec for orchestration.
+     *
+     * @typedef {Object} LayerCakeMeta
+     * @property {string} version - Semantic version (e.g., "3.0")
+     * @property {string} name - System name ("Layer Cake")
+     * @property {string} description - Brief description of the methodology
+     *
+     * @typedef {Object} Actor
+     * @property {string} id - Unique identifier (e.g., "planner", "builder", "reviewer")
+     * @property {string} label - Display name (e.g., "Claude Planner")
+     * @property {string} color - Hex color for visualization (e.g., "#10b981")
+     * @property {string} role - Description of what this actor does
+     *
+     * @typedef {Object} HierarchyLevel
+     * @property {number} min - Minimum count required at this level (e.g., 3 for epics)
+     * @property {string} layer - Which layer creates this level (e.g., "L4" for epics)
+     * @property {string|null} parent - Parent level type (null for epic, "epic" for feature, etc.)
+     * @property {string} timeScale - Expected time scale ("weeks", "days", "hours", "minutes")
+     *
+     * @typedef {Object} LayerCheck
+     * @property {number} [min] - Minimum count required
+     * @property {string} type - Type of check ("quotes", "JTBD", "epics", "features", "tasks", "subtasks", "tests_pass", "verdict")
+     * @property {string} [per] - Per-item scope for hierarchical checks ("epic", "feature", "task")
+     * @property {string} [value] - Expected value for verdict checks ("PASS")
+     *
+     * @typedef {Object} FailRouting
+     * @property {string} minor - Target layer for minor issues (code fix needed)
+     * @property {string} major - Target layer for major issues (spec revision needed)
+     * @property {string} escalate - Target layer for escalation (rethink approach)
+     *
+     * @typedef {Object} Layer
+     * @property {string} id - Unique identifier (L1-L12)
+     * @property {string} name - Display name (e.g., "Input", "Decompose", "Build")
+     * @property {string} phase - Phase category ("understand", "plan", "build", "review", "learn")
+     * @property {string} actor - Actor responsible ("planner", "builder", "reviewer")
+     * @property {string} action - Action verb (e.g., "Gather", "Implement", "Review")
+     * @property {string} description - What this layer accomplishes
+     * @property {string[]} outputs - File paths or artifacts produced
+     * @property {LayerCheck|null} check - Completion check criteria
+     * @property {string|null} reviewType - Review category ("plan" or "build") if reviewed, null otherwise
+     * @property {boolean} humanGate - Whether human approval is required after this layer
+     * @property {string|null} onPass - Next layer ID on success, or "COMPLETE"
+     * @property {string|FailRouting|null} onFail - Routing on failure (simple string or complex object)
+     * @property {string} prompt - Full prompt template for the agent
+     *
+     * @typedef {Object} Gates
+     * @property {string[]} humanApproval - Layers requiring human approval (e.g., ["L3", "L7"])
+     * @property {string[]} ganPlanReview - Layers where GAN reviews plans (e.g., ["L3", "L4", "L5", "L6", "L7"])
+     * @property {string[]} ganBuildReview - Layers where GAN reviews builds (e.g., ["L9", "L10", "L11"])
+     *
+     * @typedef {Object} FailCascade
+     * @property {string} minor - Rule for minor failures
+     * @property {string} major - Rule for major failures
+     * @property {string} escalate - Rule for escalations
+     * @property {number} maxRetries - Maximum retries before escalating (e.g., 3)
+     *
+     * @typedef {Object} LayerCake
+     * @property {LayerCakeMeta} meta - Metadata about the methodology
+     * @property {Object.<string, Actor>} actors - Map of actor ID to Actor definition
+     * @property {Object.<string, HierarchyLevel>} hierarchy - Map of level type to HierarchyLevel
+     * @property {Layer[]} layers - Array of all 12 layers in order
+     * @property {Gates} gates - Gate definitions
+     * @property {FailCascade} failCascade - Failure cascade rules
+     * @property {function(string): Layer} getLayer - Get layer by ID
+     * @property {function(string): Actor} getActor - Get actor by ID
+     * @property {function(string): HierarchyLevel} getHierarchyLevel - Get hierarchy level by type
+     * @property {function(number=, number=, number=, number=): number} getMinSubtasks - Calculate minimum subtasks
+     *
+     * @type {LayerCake}
+     */
+    const LAYER_CAKE = {
+      meta: {
+        version: "3.0",
+        name: "Layer Cake",
+        description: "Autonomous code generation through nested planning and adversarial review"
+      },
+
+      // === ACTORS ===
+      actors: {
+        ralph_start: {
+          id: "ralph_start",
+          label: "Ralph Start",
+          color: "#ff6b35",
+          role: "Spawns Claude agents, initiates each layer"
+        },
+        planner: {
+          id: "planner",
+          label: "Claude Planner",
+          color: "#10b981",
+          role: "Understands requirements, creates nested plans"
+        },
+        builder: {
+          id: "builder",
+          label: "Claude Builder",
+          color: "#3b82f6",
+          role: "Implements code from subtask specs"
+        },
+        reviewer: {
+          id: "reviewer",
+          label: "Claude Reviewer",
+          color: "#8b5cf6",
+          role: "GAN critic - reviews plans and builds for thoroughness"
+        },
+        ralph_check: {
+          id: "ralph_check",
+          label: "Ralph Check",
+          color: "#ff6b35",
+          role: "Validates outputs, routes pass/fail, manages state"
+        },
+        human: {
+          id: "human",
+          label: "Human",
+          color: "#f59e0b",
+          role: "Provides input, approves plans, accepts final output"
+        }
+      },
+
+      // === HIERARCHY ===
+      hierarchy: {
+        epic:    { min: 3, layer: "L4", parent: null,     timeScale: "weeks" },
+        feature: { min: 3, layer: "L5", parent: "epic",   timeScale: "days" },
+        task:    { min: 3, layer: "L6", parent: "feature", timeScale: "hours" },
+        subtask: { min: 2, layer: "L7", parent: "task",   timeScale: "minutes" }
+      },
+
+      // === LAYERS ===
+      layers: [
+        {
+          id: "L1",
+          name: "Input",
+          phase: "understand",
+          actor: "planner",
+          action: "Gather",
+          description: "Read brain dumps, designs, existing code",
+          outputs: ["1-input/brain-dump-*.md", "1-input/research/*", "1-input/designs/*"],
+          check: null,
+          reviewType: null,
+          humanGate: false,
+          onPass: "L2",
+          onFail: null,
+          prompt: `You are gathering input for a new project.
+
+READ all files in /1-input/ directory.
+IDENTIFY gaps in the requirements.
+ASK clarifying questions if critical information is missing.
+
+OUTPUT: Summary of what you learned and any questions.`
+        },
+        {
+          id: "L2",
+          name: "Decompose",
+          phase: "understand",
+          actor: "planner",
+          action: "Decompose",
+          description: "Extract quotes, identify patterns, group affinities",
+          outputs: ["2-decomposition/quotes.md", "2-decomposition/patterns.md", "2-decomposition/affinities.md"],
+          check: { min: 10, type: "quotes" },
+          reviewType: null,
+          humanGate: false,
+          onPass: "L3",
+          onFail: "L2",
+          prompt: `You are decomposing raw input into atomic pieces.
+
+READ all files in /1-input/.
+EXTRACT key quotes (minimum 10) with source attribution.
+IDENTIFY patterns (minimum 5) across the inputs.
+GROUP related items into affinities.
+NOTE any contradictions or tensions.
+
+OUTPUT files:
+- 2-decomposition/quotes.md
+- 2-decomposition/patterns.md
+- 2-decomposition/affinities.md
+- 2-decomposition/tensions.md`
+        },
+        {
+          id: "L3",
+          name: "Synthesize",
+          phase: "understand",
+          actor: "planner",
+          action: "Synthesize",
+          description: "Define JTBD, map journeys, decide architecture",
+          outputs: ["3-synthesis/jtbd.md", "3-synthesis/journeys.md", "3-synthesis/architecture.md"],
+          check: { min: 3, type: "JTBD" },
+          reviewType: "plan",
+          humanGate: true,
+          onPass: "L4",
+          onFail: "L3",
+          prompt: `You are synthesizing decomposed input into actionable understanding.
+
+READ all files in /2-decomposition/.
+
+CREATE Jobs to Be Done (minimum 3):
+For each job, define:
+- When: [situation]
+- I want to: [motivation]
+- So that: [outcome]
+- Success criteria: [measurable]
+
+MAP user journeys (minimum 2).
+DECIDE on architecture approach.
+DOCUMENT constraints.
+
+OUTPUT files:
+- 3-synthesis/jtbd.md
+- 3-synthesis/journeys.md
+- 3-synthesis/architecture.md
+- 3-synthesis/constraints.md`
+        },
+        {
+          id: "L4",
+          name: "Epics",
+          phase: "plan",
+          actor: "planner",
+          action: "Define Epics",
+          description: "Define 3+ major epics with dependencies",
+          outputs: ["4-epics/epics.md"],
+          check: { min: 3, type: "epics" },
+          reviewType: "plan",
+          humanGate: false,
+          onPass: "L5",
+          onFail: "L4",
+          prompt: `You are defining high-level epics for the project.
+
+READ /3-synthesis/ to understand what we're building.
+
+DEFINE epics (minimum 3):
+For each epic:
+- Name and description
+- Dependencies (what must come first)
+- Risk level (Low/Medium/High)
+- Estimated features (3-5)
+
+CREATE dependency graph showing epic order.
+
+OUTPUT: 4-epics/epics.md`
+        },
+        {
+          id: "L5",
+          name: "Features",
+          phase: "plan",
+          actor: "planner",
+          action: "Plan Features",
+          description: "Define 3+ features per epic with specs",
+          outputs: ["5-features/{epic}/_index.md", "5-features/{epic}/feature-*.md"],
+          check: { min: 3, type: "features", per: "epic" },
+          reviewType: "plan",
+          humanGate: false,
+          onPass: "L6",
+          onFail: "L5",
+          prompt: `You are planning features for epic: {epic_name}
+
+READ /4-epics/epics.md and /3-synthesis/.
+
+For this epic, DEFINE features (minimum 3):
+For each feature:
+- Overview: what it accomplishes
+- User value: why it matters
+- Requirements (minimum 5)
+- Technical approach
+- Acceptance criteria (minimum 3)
+- Planned tasks (minimum 3)
+- Edge cases
+
+OUTPUT:
+- 5-features/{epic}/_index.md (feature list)
+- 5-features/{epic}/feature-*.md (one per feature)`
+        },
+        {
+          id: "L6",
+          name: "Tasks",
+          phase: "plan",
+          actor: "planner",
+          action: "Spec Tasks",
+          description: "Define 3+ tasks per feature",
+          outputs: ["6-tasks/{epic}/{feature}/_tasks.md"],
+          check: { min: 3, type: "tasks", per: "feature" },
+          reviewType: "plan",
+          humanGate: false,
+          onPass: "L7",
+          onFail: "L6",
+          prompt: `You are specifying tasks for feature: {feature_name}
+
+READ the feature spec at /5-features/{epic}/{feature}.md.
+
+DEFINE tasks (minimum 3):
+For each task:
+- What it accomplishes (one specific thing)
+- Time estimate (~15-30 min)
+- Files to create/modify
+- Dependencies on other tasks
+
+Each task should be completable in one focused session.
+
+OUTPUT: 6-tasks/{epic}/{feature}/_tasks.md`
+        },
+        {
+          id: "L7",
+          name: "Subtasks",
+          phase: "plan",
+          actor: "planner",
+          action: "Define Subtasks",
+          description: "Define 2+ subtasks per task with files/actions",
+          outputs: ["7-subtasks/{epic}/{feature}/task-*.md"],
+          check: { min: 2, type: "subtasks", per: "task" },
+          reviewType: "plan",
+          humanGate: true,
+          onPass: "L8",
+          onFail: "L7",
+          prompt: `You are defining subtasks for task: {task_name}
+
+READ the task list at /6-tasks/{epic}/{feature}/_tasks.md.
+
+For this task, DEFINE subtasks (minimum 2):
+For each subtask:
+- [ ] Specific action to take
+- Files to create/modify with paths
+- Code patterns or APIs to use
+- How to verify it's complete
+
+Subtasks should be atomic - one clear action each.
+
+OUTPUT: 7-subtasks/{epic}/{feature}/task-{n}-{name}.md`
+        },
+        {
+          id: "L8",
+          name: "Build",
+          phase: "build",
+          actor: "builder",
+          action: "Implement",
+          description: "Execute subtasks, write code, commit",
+          outputs: ["git commits"],
+          check: { type: "tests_pass" },
+          reviewType: null,
+          humanGate: false,
+          onPass: "L9",
+          onFail: "L8",
+          prompt: `You are implementing task: {task_name}
+
+READ the task spec at /5-epics/{epic}/{feature}/{task}.md.
+
+For each subtask:
+1. Implement the code change
+2. Verify it works
+3. Run tests
+4. Check off the subtask
+
+When all subtasks complete:
+- Run full test suite
+- Commit with message: "[L8] {task_name}"
+
+Do NOT proceed if tests fail. Fix first.`
+        },
+        {
+          id: "L9",
+          name: "Feature Review",
+          phase: "review",
+          actor: "reviewer",
+          action: "Feature Gate",
+          description: "GAN review via /chrome - test UX",
+          outputs: ["5-epics/epic-*/feature-*/_review.md"],
+          check: { type: "verdict", value: "PASS" },
+          reviewType: "build",
+          humanGate: false,
+          onPass: "L10",
+          onFail: { minor: "L8", major: "L7", escalate: "L6" },
+          prompt: `You are the GAN CRITIC reviewing feature: {feature_name}
+
+Your job is to FIND PROBLEMS, not to approve.
+
+USE /chrome to test the feature:
+1. Navigate to the relevant UI
+2. Test each acceptance criterion from the spec
+3. Test edge cases
+4. Assess UX quality (not just "works")
+
+For each issue found:
+- Severity: MINOR (code fix) or MAJOR (spec issue)
+- Description: what's wrong
+- Evidence: what you observed
+- Recommendation: how to fix
+
+VERDICT: PASS only if ALL criteria met AND UX is good.
+Otherwise: FAIL with detailed issues.
+
+OUTPUT: 5-epics/{epic}/{feature}/\_review.md`
+        },
+        {
+          id: "L10",
+          name: "Epic Review",
+          phase: "review",
+          actor: "reviewer",
+          action: "Epic Gate",
+          description: "Integration testing across features",
+          outputs: ["6-integration/epic-*-results.md"],
+          check: { type: "verdict", value: "PASS" },
+          reviewType: "build",
+          humanGate: false,
+          onPass: "L11",
+          onFail: { minor: "L8", major: "L6", escalate: "L5" },
+          prompt: `You are the GAN CRITIC reviewing epic integration: {epic_name}
+
+TEST cross-feature interactions:
+1. Do features work together?
+2. Is data flowing correctly between features?
+3. Are there conflicts or regressions?
+
+USE /chrome to test end-to-end flows.
+
+VERDICT: PASS only if all features integrate correctly.
+
+OUTPUT: 6-integration/epic-{n}-results.md`
+        },
+        {
+          id: "L11",
+          name: "Final Review",
+          phase: "review",
+          actor: "reviewer",
+          action: "Final Gate",
+          description: "Full UX walkthrough - ship worthy?",
+          outputs: ["6-integration/final-review.md"],
+          check: { type: "verdict", value: "PASS" },
+          reviewType: "build",
+          humanGate: false,
+          onPass: "L12",
+          onFail: { minor: "L8", major: "L5", escalate: "L4" },
+          prompt: `You are the GAN CRITIC doing FINAL REVIEW.
+
+This is the last gate before shipping. Be thorough.
+
+FULL WALKTHROUGH via /chrome:
+1. Test every epic's main flows
+2. Check design consistency
+3. Verify performance is acceptable
+4. Test error states
+5. Check accessibility basics
+
+ASK: Would I be proud to ship this?
+
+VERDICT: PASS only if ship-worthy.
+
+OUTPUT: 6-integration/final-review.md`
+        },
+        {
+          id: "L12",
+          name: "Analysis",
+          phase: "learn",
+          actor: "planner",
+          action: "Retrospective",
+          description: "Document learnings and methodology improvements",
+          outputs: ["7-analysis/retrospective.md"],
+          check: null,
+          reviewType: null,
+          humanGate: false,
+          onPass: "COMPLETE",
+          onFail: null,
+          prompt: `You are writing the project retrospective.
+
+SUMMARIZE:
+- What was built
+- Metrics (epics, features, tasks, subtasks, iterations)
+- Timeline
+
+REFLECT:
+- What worked well
+- What didn't work
+- Key learnings
+
+IMPROVE:
+- Suggestions for the Layer Cake methodology itself
+
+OUTPUT: 7-analysis/retrospective.md`
+        }
+      ],
+
+      // === GATES ===
+      gates: {
+        humanApproval: ["L3", "L7"],
+        ganPlanReview: ["L3", "L4", "L5", "L6", "L7"],
+        ganBuildReview: ["L9", "L10", "L11"]
+      },
+
+      // === FAIL CASCADE RULES ===
+      failCascade: {
+        minor: "Same layer - fix and retry",
+        major: "One level back in hierarchy - revise spec",
+        escalate: "Two+ levels back - rethink approach",
+        maxRetries: 3
+      },
+
+      // === HELPER FUNCTIONS ===
+
+      /**
+       * Get a layer definition by its ID.
+       * @param {string} id - Layer ID (e.g., "L1", "L8", "L12")
+       * @returns {Layer|undefined} The layer definition, or undefined if not found
+       * @example
+       * const buildLayer = LAYER_CAKE.getLayer("L8");
+       * console.log(buildLayer.actor); // "builder"
+       */
+      getLayer(id) {
+        return this.layers.find(l => l.id === id);
+      },
+
+      /**
+       * Get an actor definition by its ID.
+       * @param {string} id - Actor ID (e.g., "planner", "builder", "reviewer")
+       * @returns {Actor|undefined} The actor definition, or undefined if not found
+       * @example
+       * const planner = LAYER_CAKE.getActor("planner");
+       * console.log(planner.color); // "#10b981"
+       */
+      getActor(id) {
+        return this.actors[id];
+      },
+
+      /**
+       * Get a hierarchy level definition by its type.
+       * @param {string} type - Hierarchy type ("epic", "feature", "task", "subtask")
+       * @returns {HierarchyLevel|undefined} The hierarchy level definition
+       * @example
+       * const taskLevel = LAYER_CAKE.getHierarchyLevel("task");
+       * console.log(taskLevel.min); // 3
+       */
+      getHierarchyLevel(type) {
+        return this.hierarchy[type];
+      },
+
+      /**
+       * Calculate the minimum number of subtasks for a project based on hierarchy minimums.
+       * Uses the formula: epics × features × tasks × subtasks
+       * @param {number} [epicCount=3] - Number of epics (default: 3, minimum enforced)
+       * @param {number} [featuresPerEpic=3] - Features per epic (default: 3, minimum enforced)
+       * @param {number} [tasksPerFeature=3] - Tasks per feature (default: 3, minimum enforced)
+       * @param {number} [subtasksPerTask=2] - Subtasks per task (default: 2, minimum enforced)
+       * @returns {number} Total minimum subtasks
+       * @example
+       * // Default minimums: 3 × 3 × 3 × 2 = 54
+       * LAYER_CAKE.getMinSubtasks(); // 54
+       * // Custom counts: 4 × 4 × 4 × 3 = 192
+       * LAYER_CAKE.getMinSubtasks(4, 4, 4, 3); // 192
+       */
+      getMinSubtasks(epicCount = 3, featuresPerEpic = 3, tasksPerFeature = 3, subtasksPerTask = 2) {
+        return epicCount * featuresPerEpic * tasksPerFeature * subtasksPerTask;
+      }
+    };
+
+    // Schema version for exports
+    const LAYER_CAKE_SCHEMA_VERSION = "1.0.0";
+
+    /**
+     * Tier presets for project sizing
+     * Based on architecture decisions for different project complexity levels
+     */
+    const TIER_PRESETS = {
+      micro: {
+        name: 'Micro',
+        description: 'Quick fix or small enhancement',
+        epics: 1,
+        features: 2,
+        tasks: 2,
+        subtasks: 1,
+        timeEstimate: '< 1 day'
+      },
+      small: {
+        name: 'Small',
+        description: 'Single feature or bug fix',
+        epics: 3,
+        features: 3,
+        tasks: 3,
+        subtasks: 2,
+        timeEstimate: '1-3 days'
+      },
+      medium: {
+        name: 'Medium',
+        description: 'Multi-feature project',
+        epics: 4,
+        features: 4,
+        tasks: 4,
+        subtasks: 2,
+        timeEstimate: '1-2 weeks'
+      },
+      large: {
+        name: 'Large',
+        description: 'Full application build',
+        epics: 5,
+        features: 5,
+        tasks: 5,
+        subtasks: 3,
+        timeEstimate: '2-4 weeks'
+      }
+    };
+
+    /**
+     * Calculate total subtasks for a tier
+     * @param {Object} tier - Tier preset object
+     * @returns {number} Total minimum subtasks
+     */
+    function getTierTotal(tier) {
+      return tier.epics * tier.features * tier.tasks * tier.subtasks;
+    }
+
+    // Make tier presets available globally
+    window.TIER_PRESETS = TIER_PRESETS;
+    window.getTierTotal = getTierTotal;
+
+    // Make it available globally and for export
+    window.LAYER_CAKE = LAYER_CAKE;
+
+    // Log for debugging
+    console.log("🍰 Layer Cake loaded:", LAYER_CAKE.meta);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // EXPORT/IMPORT UTILITIES
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Sanitize LAYER_CAKE object for JSON export.
+     * - Deep clones the object
+     * - Replaces functions with descriptive strings
+     * - Adds export metadata
+     * @returns {Object} Sanitized object ready for JSON serialization
+     */
+    function sanitizeForExport() {
+      function deepCloneWithFunctionReplacement(obj, path = '') {
+        if (obj === null || obj === undefined) return obj;
+        if (typeof obj === 'function') return `[Function: ${obj.name || 'anonymous'}]`;
+        if (Array.isArray(obj)) {
+          return obj.map((item, i) => deepCloneWithFunctionReplacement(item, `${path}[${i}]`));
+        }
+        if (typeof obj === 'object') {
+          const result = {};
+          for (const key of Object.keys(obj)) {
+            result[key] = deepCloneWithFunctionReplacement(obj[key], `${path}.${key}`);
+          }
+          return result;
+        }
+        return obj;
+      }
+
+      const sanitized = deepCloneWithFunctionReplacement(LAYER_CAKE);
+      sanitized._export = {
+        schemaVersion: LAYER_CAKE_SCHEMA_VERSION,
+        exportTimestamp: new Date().toISOString(),
+        sourceFile: window.location.href
+      };
+      return sanitized;
+    }
+
+    /**
+     * Import a LAYER_CAKE configuration from JSON.
+     * @param {string} jsonString - JSON string to parse
+     * @returns {Object} Result with success status and data/error
+     */
+    function importLayerCake(jsonString) {
+      try {
+        const data = JSON.parse(jsonString);
+        const requiredKeys = ['meta', 'actors', 'hierarchy', 'layers', 'gates', 'failCascade'];
+        const missingKeys = requiredKeys.filter(key => !(key in data));
+
+        if (missingKeys.length > 0) {
+          return { success: false, error: `Missing required keys: ${missingKeys.join(', ')}` };
+        }
+        if (!Array.isArray(data.layers) || data.layers.length !== 12) {
+          return { success: false, error: `Expected 12 layers, got ${Array.isArray(data.layers) ? data.layers.length : 'non-array'}` };
+        }
+        if (data._export?.schemaVersion) {
+          console.log(`📥 Importing Layer Cake v${data.meta.version} (schema ${data._export.schemaVersion})`);
+        }
+        return {
+          success: true,
+          data: data,
+          meta: { version: data.meta?.version, schemaVersion: data._export?.schemaVersion, exportTimestamp: data._export?.exportTimestamp }
+        };
+      } catch (e) {
+        return { success: false, error: `JSON parse error: ${e.message}` };
+      }
+    }
+
+    /**
+     * Show a toast notification
+     * @param {string} message - Message to display
+     * @param {string} type - 'success' | 'error' | 'info'
+     * @param {number} duration - Duration in ms (default 3000)
+     */
+    function showToast(message, type = 'info', duration = 3000) {
+      let container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;';
+        document.body.appendChild(container);
+      }
+
+      const toast = document.createElement('div');
+      const colors = { success: { bg: '#10b981', icon: '✓' }, error: { bg: '#ef4444', icon: '✕' }, info: { bg: '#3b82f6', icon: 'ℹ' } };
+      const { bg, icon } = colors[type] || colors.info;
+
+      toast.style.cssText = `background: ${bg}; color: white; padding: 12px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px; animation: toastSlideIn 0.2s ease;`;
+      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'toastSlideOut 0.2s ease';
+        setTimeout(() => toast.remove(), 200);
+      }, duration);
+    }
+
+    /**
+     * Copy text to clipboard with toast feedback
+     * @param {string} text - Text to copy
+     * @param {string} successMessage - Message to show on success
+     */
+    async function copyToClipboard(text, successMessage = 'Copied to clipboard') {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(successMessage, 'success');
+      } catch (e) {
+        showToast('Failed to copy: ' + e.message, 'error');
+      }
+    }
+
+    // Add toast animation styles
+    const toastStyles = document.createElement('style');
+    toastStyles.textContent = `
+      @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+    `;
+    document.head.appendChild(toastStyles);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SERVICE BLUEPRINT RENDERER
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // Blueprint configuration - maps layers to actors and activities
+    const BLUEPRINT_CONFIG = {
+      layers: ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'L10', 'L11', 'L12'],
+      rows: [
+        {
+          id: 'ralph_start',
+          label: 'Ralph Start',
+          class: 'orchestrator',
+          cells: {
+            L1: { action: 'Spawn', detail: 'Planner' },
+            L2: { action: 'Spawn', detail: 'Planner' },
+            L3: { action: 'Spawn', detail: 'Planner' },
+            L4: { action: 'Spawn', detail: 'Planner' },
+            L5: { action: 'Spawn', detail: 'Planner' },
+            L6: { action: 'Spawn', detail: 'Planner' },
+            L7: { action: 'Spawn', detail: 'Planner' },
+            L8: { action: 'Spawn', detail: 'Builder' },
+            L9: { action: 'Spawn', detail: 'Reviewer' },
+            L10: { action: 'Spawn', detail: 'Reviewer' },
+            L11: { action: 'Spawn', detail: 'Reviewer' },
+            L12: { action: 'Spawn', detail: 'Planner' }
+          }
+        },
+        {
+          id: 'planner',
+          label: 'Claude Planner',
+          class: 'planner',
+          cells: {
+            L1: { action: 'Gather', detail: 'Read inputs', clickable: true },
+            L2: { action: 'Decompose', detail: 'Quotes, patterns', clickable: true },
+            L3: { action: 'Synthesize', detail: 'JTBD, journeys', clickable: true },
+            L4: { action: 'Define Epics', detail: '3+ epics', clickable: true },
+            L5: { action: 'Plan Features', detail: '3+ features', clickable: true },
+            L6: { action: 'Spec Tasks', detail: '3+ tasks', clickable: true },
+            L7: { action: 'Define Subtasks', detail: '2+ per task', clickable: true },
+            L12: { action: 'Retrospective', detail: 'Document learnings', clickable: true }
+          }
+        },
+        {
+          id: 'builder',
+          label: 'Claude Builder',
+          class: 'builder',
+          cells: {
+            L8: { action: 'Implement', detail: 'Code + commit', clickable: true }
+          }
+        },
+        {
+          id: 'reviewer',
+          label: 'Claude Reviewer',
+          class: 'reviewer',
+          cells: {
+            L3: { action: 'GAN', detail: 'Thorough?', clickable: true, highlight: true },
+            L4: { action: 'GAN', detail: 'Thorough?', clickable: true, highlight: true },
+            L5: { action: 'GAN', detail: 'Thorough?', clickable: true, highlight: true },
+            L6: { action: 'GAN', detail: 'Thorough?', clickable: true, highlight: true },
+            L7: { action: 'GAN', detail: 'Thorough?', clickable: true, highlight: true },
+            L9: { action: 'Feature', detail: '/chrome', clickable: true, highlight: true },
+            L10: { action: 'Epic', detail: 'Integration', clickable: true, highlight: true },
+            L11: { action: 'Final', detail: 'Full UX', clickable: true, highlight: true }
+          }
+        },
+        {
+          id: 'ralph_check',
+          label: 'Ralph Check',
+          class: 'orchestrator',
+          cells: {
+            L3: { action: '3+ JTBD?', detail: 'Route' },
+            L4: { action: '3+ epics?', detail: 'Route' },
+            L5: { action: '3+ feat?', detail: 'Route' },
+            L6: { action: '3+ tasks?', detail: 'Route' },
+            L7: { action: '2+ subs?', detail: 'Route' },
+            L8: { action: 'Tests?', detail: 'Route' },
+            L9: { action: 'Pass/Fail', detail: 'Pass→L10 | Minor→L8 | Major→L7 | Escalate→L6', highlight: true },
+            L10: { action: 'Pass/Fail', detail: 'Pass→L11 | Minor→L8 | Major→L6 | Escalate→L5', highlight: true },
+            L11: { action: 'Pass/Fail', detail: 'Pass→L12 | Minor→L8 | Major→L5 | Escalate→L4', highlight: true },
+            L12: { action: 'Done', detail: 'Complete' }
+          }
+        },
+        {
+          id: 'human',
+          label: 'Human',
+          class: 'user',
+          cells: {
+            L1: { action: 'Input', detail: 'Brain dumps' },
+            L3: { action: 'Review?', detail: 'Optional', gate: true },
+            L7: { action: 'Approve', detail: 'Start build', gate: true },
+            L12: { action: 'Accept', detail: 'Ship it' }
+          }
+        }
+      ]
+    };
+
+    // Render the blueprint and cascade sections on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      renderBlueprint();
+      initCascadeSection();
+    });
+
+    /**
+     * Initialize the cascade section with dynamic content from LAYER_CAKE
+     */
+    function initCascadeSection() {
+      // Render cascade rules
+      const rulesContainer = document.getElementById('cascade-rules-container');
+      if (rulesContainer) {
+        rulesContainer.innerHTML = renderCascadeRules();
+      }
+
+      // Render layer-specific fail targets
+      ['L9', 'L10', 'L11'].forEach(layerId => {
+        const targetEl = document.getElementById(`${layerId.toLowerCase()}-fail-targets`);
+        if (targetEl) {
+          targetEl.innerHTML = renderLayerFailTargets(layerId);
+        }
+      });
+    }
+
+    function renderBlueprint() {
+      const container = document.getElementById('service-blueprint');
+      if (!container) return;
+
+      let html = '';
+
+      // Phase Labels (header row)
+      html += '<div class="phase-row">';
+      html += '<div class="phase-label corner"></div>';
+      BLUEPRINT_CONFIG.layers.forEach(layerId => {
+        const layer = LAYER_CAKE.getLayer(layerId);
+        const actor = LAYER_CAKE.actors[layer.actor];
+        html += `<div class="phase-label" style="background: ${actor.color};">
+          <span class="num">${layer.id}</span>
+          ${layer.name}
+        </div>`;
+      });
+      html += '</div>';
+
+      // Swimlane rows
+      BLUEPRINT_CONFIG.rows.forEach(row => {
+        html += '<div class="swimlane">';
+        html += `<div class="lane-label ${row.class}">${row.label}</div>`;
+
+        BLUEPRINT_CONFIG.layers.forEach(layerId => {
+          const cell = row.cells[layerId];
+          const layer = LAYER_CAKE.getLayer(layerId);
+
+          if (cell) {
+            // Determine cell classes based on LAYER_CAKE data
+            const cellClasses = ['lane-cell'];
+            const activityClasses = ['activity'];
+            let cellStyle = '';
+
+            // Human gate styling (L3, L7)
+            if (LAYER_CAKE.gates.humanApproval.includes(layerId) && cell.gate) {
+              cellClasses.push('human-gate');
+              activityClasses.push('gate-activity');
+            }
+
+            // Reviewer active styling (L9-L11)
+            if (LAYER_CAKE.gates.ganBuildReview.includes(layerId) && row.class === 'reviewer') {
+              cellClasses.push('reviewer-active');
+            }
+
+            // Highlight class for reviewer row
+            if (cell.highlight) {
+              cellClasses.push('highlight');
+              if (row.class === 'reviewer') {
+                cellStyle = 'background: rgba(139,92,246,0.15);';
+              }
+            }
+
+            // Activity type class
+            const activityTypeClass = row.class === 'planner' ? 'plan' :
+                                      row.class === 'builder' ? 'build' :
+                                      row.class === 'reviewer' ? 'review' : row.class;
+            activityClasses.push(activityTypeClass);
+
+            // Clickable
+            if (cell.clickable) {
+              activityClasses.push('clickable');
+            }
+            const clickHandler = cell.clickable ? `onclick="openLayerModal('${layerId}')"` : '';
+
+            html += `<div class="${cellClasses.join(' ')}" style="${cellStyle}">
+              <div class="${activityClasses.join(' ')}" ${clickHandler}>
+                <strong>${cell.action}</strong>
+                ${cell.detail}
+              </div>
+            </div>`;
+          } else {
+            html += '<div class="lane-cell empty"></div>';
+          }
+        });
+
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+    }
+
+    // Modal functions
+    function openLayerModal(layerId) {
+      const layer = LAYER_CAKE.getLayer(layerId);
+      const actor = LAYER_CAKE.actors[layer.actor];
+      const modal = document.getElementById('layer-modal');
+
+      // Update header
+      document.getElementById('modal-layer-id').textContent = layer.id;
+      document.getElementById('modal-layer-name').textContent = layer.name;
+
+      const badge = document.getElementById('modal-actor-badge');
+      badge.textContent = actor.label;
+      badge.style.background = actor.color + '20';
+      badge.style.color = actor.color;
+      badge.style.border = `1px solid ${actor.color}40`;
+
+      // Build body content
+      let bodyHtml = '';
+
+      // Description
+      bodyHtml += `<div class="modal-section">
+        <div class="modal-section-title">Description</div>
+        <div class="modal-section-content">${layer.description}</div>
+      </div>`;
+
+      // Actor & Role
+      bodyHtml += `<div class="modal-section">
+        <div class="modal-section-title">Actor</div>
+        <div class="modal-section-content"><strong>${actor.label}</strong> — ${actor.role}</div>
+      </div>`;
+
+      // Outputs
+      if (layer.outputs && layer.outputs.length > 0) {
+        bodyHtml += `<div class="modal-section">
+          <div class="modal-section-title">Outputs</div>
+          <div class="modal-outputs">
+            ${layer.outputs.map(o => `<span class="modal-output-tag">${o}</span>`).join('')}
+          </div>
+        </div>`;
+      }
+
+      // Completion Check
+      if (layer.check) {
+        const checkText = layer.check.min ?
+          `Minimum ${layer.check.min} ${layer.check.type}${layer.check.per ? ` per ${layer.check.per}` : ''}` :
+          `${layer.check.type}: ${layer.check.value}`;
+        bodyHtml += `<div class="modal-section">
+          <div class="modal-section-title">Completion Check</div>
+          <div class="modal-section-content">${checkText}</div>
+        </div>`;
+      }
+
+      // Tools (for specific actors)
+      const tools = getToolsForLayer(layer);
+      if (tools.length > 0) {
+        bodyHtml += `<div class="modal-section">
+          <div class="modal-section-title">Tools Available</div>
+          <div class="modal-tools">
+            ${tools.map(t => `<span class="modal-tool-tag">${t}</span>`).join('')}
+          </div>
+        </div>`;
+      }
+
+      // Human Gate
+      if (layer.humanGate) {
+        bodyHtml += `<div class="modal-section">
+          <div class="modal-section-title">Human Gate</div>
+          <div class="modal-gate-badge">🚦 Optional human approval checkpoint</div>
+        </div>`;
+      }
+
+      // Review Type
+      if (layer.reviewType) {
+        bodyHtml += `<div class="modal-section">
+          <div class="modal-section-title">Review Type</div>
+          <div class="modal-section-content">${layer.reviewType === 'plan' ? '📋 Plan Review — Is it thorough and complete?' : '🔍 Build Review — Does it work correctly?'}</div>
+        </div>`;
+      }
+
+      // Flow (Pass/Fail routes)
+      bodyHtml += `<div class="modal-section">
+        <div class="modal-section-title">Flow</div>
+        <div class="modal-flow">
+          <span class="modal-flow-item pass">✓ Pass → ${layer.onPass}</span>`;
+      if (layer.onFail) {
+        if (typeof layer.onFail === 'string') {
+          bodyHtml += `<span class="modal-flow-item minor">✗ Fail → ${layer.onFail}</span>`;
+        } else {
+          if (layer.onFail.minor) bodyHtml += `<span class="modal-flow-item minor">Minor → ${layer.onFail.minor}</span>`;
+          if (layer.onFail.major) bodyHtml += `<span class="modal-flow-item major">Major → ${layer.onFail.major}</span>`;
+          if (layer.onFail.escalate) bodyHtml += `<span class="modal-flow-item escalate">Escalate → ${layer.onFail.escalate}</span>`;
+        }
+      }
+      bodyHtml += '</div></div>';
+
+      // Prompt Template
+      bodyHtml += `<div class="modal-section">
+        <div class="modal-section-title">Prompt Template</div>
+        <div class="modal-prompt">${escapeHtmlForModal(layer.prompt)}</div>
+      </div>`;
+
+      document.getElementById('modal-body').innerHTML = bodyHtml;
+
+      // Show modal
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('layer-modal');
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function getToolsForLayer(layer) {
+      const tools = [];
+      if (layer.actor === 'planner') {
+        tools.push('Read', 'Write', 'Glob', 'Grep');
+      }
+      if (layer.actor === 'builder') {
+        tools.push('Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep');
+      }
+      if (layer.actor === 'reviewer') {
+        tools.push('Read', '/chrome', 'Glob', 'Grep');
+        if (layer.reviewType === 'build') {
+          tools.push('Browser Automation');
+        }
+      }
+      return tools;
+    }
+
+    function escapeHtmlForModal(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Collapsible sections
+    function toggleSection(sectionId) {
+      const header = document.querySelector(`[data-section="${sectionId}"]`);
+      const content = document.getElementById(sectionId);
+      header.classList.toggle('collapsed');
+      content.classList.toggle('collapsed');
+    }
+
+    /**
+     * Render the cascade rules section dynamically from LAYER_CAKE.failCascade
+     * @returns {string} HTML string for the cascade rules
+     */
+    function renderCascadeRules() {
+      const { failCascade } = LAYER_CAKE;
+
+      return `
+        <div class="cascade-rules-dynamic">
+          <div class="cascade-rule cascade-minor">
+            <span class="cascade-label">MINOR</span>
+            <span class="cascade-arrow">→</span>
+            <span class="cascade-desc">${failCascade.minor}</span>
+          </div>
+          <div class="cascade-rule cascade-major">
+            <span class="cascade-label">MAJOR</span>
+            <span class="cascade-arrow">→</span>
+            <span class="cascade-desc">${failCascade.major}</span>
+          </div>
+          <div class="cascade-rule cascade-escalate">
+            <span class="cascade-label">ESCALATE</span>
+            <span class="cascade-arrow">→</span>
+            <span class="cascade-desc">${failCascade.escalate}</span>
+          </div>
+          <div class="cascade-rule cascade-max">
+            <span class="cascade-label">MAX RETRIES</span>
+            <span class="cascade-value">${failCascade.maxRetries}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Render layer-specific fail targets from LAYER_CAKE.layers[].onFail
+     * @param {string} layerId - Layer ID to get fail targets for
+     * @returns {string} HTML showing fail routing for this layer
+     */
+    function renderLayerFailTargets(layerId) {
+      const layer = LAYER_CAKE.getLayer(layerId);
+      if (!layer || !layer.onFail) return '';
+
+      if (typeof layer.onFail === 'string') {
+        return `<span class="fail-target">${layer.onFail}</span>`;
+      }
+
+      const { minor, major, escalate } = layer.onFail;
+      let html = '';
+      if (minor) html += `<span class="fail-target fail-minor">Minor → ${minor}</span>`;
+      if (major) html += `<span class="fail-target fail-major">Major → ${major}</span>`;
+      if (escalate) html += `<span class="fail-target fail-escalate">Escalate → ${escalate}</span>`;
+      return html;
+    }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Ralph V3</h1>
+        <div class="title">🍰 Layer Cake: Autonomous Code Generation</div>
+    </header>
+
+    <!-- SERVICE BLUEPRINT (Interactive - click any node for details) -->
+    <div class="section-title">🍰 Service Blueprint <span style="font-size: 10px; font-weight: 400; letter-spacing: 0.05em; opacity: 0.7;">— Click any node for details</span></div>
+    <div class="blueprint" id="service-blueprint">
+        <!-- Rendered by JavaScript from LAYER_CAKE -->
+    </div>
+
+    <!-- Layer Detail Modal -->
+    <div class="layer-modal" id="layer-modal">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-header">
+                <div class="modal-layer-id" id="modal-layer-id">L1</div>
+                <div class="modal-layer-name" id="modal-layer-name">Input</div>
+                <div class="modal-actor-badge" id="modal-actor-badge">Claude Planner</div>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SNAKES AND LADDERS: THE CASCADE -->
+    <div class="section-title collapsible" data-section="cascade-content" onclick="toggleSection('cascade-content')">
+        <span>🐍 Pass/Fail Cascade</span>
+        <span class="toggle-icon">▼</span>
+    </div>
+    <div class="collapsible-content" id="cascade-content">
+    <div style="padding: 40px; background: var(--black); color: var(--white);">
+
+        <!-- The Core Loop Pattern -->
+        <div style="margin-bottom: 40px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gray-400); margin-bottom: 16px;">The Universal Pattern (Every Level)</div>
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div style="padding: 16px 24px; background: var(--planner); border-radius: 4px;">
+                    <strong>Plan</strong>
+                </div>
+                <span style="color: var(--gray-500); font-size: 24px;">→</span>
+                <div style="padding: 16px 24px; background: var(--review); border-radius: 4px;">
+                    <strong>Review</strong>
+                </div>
+                <span style="color: var(--gray-500); font-size: 24px;">→</span>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="padding: 12px 20px; background: var(--pass); border-radius: 4px; color: var(--black);">
+                        <strong>PASS</strong> → Next Level ↑
+                    </div>
+                    <div style="padding: 12px 20px; background: var(--fail); border-radius: 4px;">
+                        <strong>FAIL</strong> → Expand/Redo ↩
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planning Phase Cascade -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gray-400); margin-bottom: 16px;">Planning Phase (L3-L7)</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--planner); border-radius: 4px; text-align: center; font-size: 12px;">L3 JTBD</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: Thorough enough?</div>
+                        <span style="color: var(--pass);">✓ L4</span>
+                        <span style="color: var(--fail);">✗ Expand</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--planner); border-radius: 4px; text-align: center; font-size: 12px;">L4 Epics</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: 3+ epics? Clear deps?</div>
+                        <span style="color: var(--pass);">✓ L5</span>
+                        <span style="color: var(--fail);">✗ Expand</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--planner); border-radius: 4px; text-align: center; font-size: 12px;">L5 Features</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: 3+ per epic? Detailed?</div>
+                        <span style="color: var(--pass);">✓ L6</span>
+                        <span style="color: var(--fail);">✗ Expand</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--planner); border-radius: 4px; text-align: center; font-size: 12px;">L6 Tasks</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: 3+ per feature? Scoped?</div>
+                        <span style="color: var(--pass);">✓ L7</span>
+                        <span style="color: var(--fail);">✗ Expand</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--planner); border-radius: 4px; text-align: center; font-size: 12px;">L7 Subtasks</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: 2+ per task? Files listed?</div>
+                        <span style="color: var(--pass);">✓ Human Approval</span>
+                        <span style="color: var(--fail);">✗ Expand</span>
+                    </div>
+                    <div style="margin-top: 8px; padding: 12px; background: var(--user); border-radius: 4px; color: var(--black); text-align: center;">
+                        <strong>Human Reviews Full Plan</strong> → Approve to Build
+                    </div>
+                </div>
+            </div>
+
+            <!-- Build Phase Cascade -->
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gray-400); margin-bottom: 16px;">Build Phase (L8-L11)</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--builder); border-radius: 4px; text-align: center; font-size: 12px;">L8 Build</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(59,130,246,0.3); border-radius: 4px; font-size: 11px;">Tests pass? Committed?</div>
+                        <span style="color: var(--pass);">✓ L9</span>
+                        <span style="color: var(--fail);">✗ Fix code</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--review); border-radius: 4px; text-align: center; font-size: 12px;">L9 Feature</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: /chrome UX test</div>
+                        <span style="color: var(--pass);">✓ L10</span>
+                        <span style="color: var(--fail);">✗ → L8 or L7</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--review); border-radius: 4px; text-align: center; font-size: 12px;">L10 Epic</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: Integration tests</div>
+                        <span style="color: var(--pass);">✓ L11</span>
+                        <span style="color: var(--fail);">✗ → L8 or L6</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 80px; padding: 8px; background: var(--review); border-radius: 4px; text-align: center; font-size: 12px;">L11 Final</div>
+                        <span style="color: var(--gray-500);">→</span>
+                        <div style="padding: 8px 12px; background: rgba(139,92,246,0.3); border-radius: 4px; font-size: 11px;">GAN: Full UX walkthrough</div>
+                        <span style="color: var(--pass);">✓ Ship!</span>
+                        <span style="color: var(--fail);">✗ → L8 or L5</span>
+                    </div>
+                </div>
+
+                <!-- Cascade Rules - Dynamically rendered from LAYER_CAKE.failCascade -->
+                <div style="margin-top: 24px;">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray-400); margin-bottom: 12px;">Fail Cascade Rules (from LAYER_CAKE)</div>
+                    <div id="cascade-rules-container">
+                        <!-- Populated by renderCascadeRules() -->
+                    </div>
+                </div>
+
+                <!-- Layer-specific fail targets -->
+                <div style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray-400); margin-bottom: 12px;">Review Layer Fail Targets</div>
+                    <div style="font-size: 12px; line-height: 2;">
+                        <div><strong>L9</strong> (Feature Review): <span id="l9-fail-targets"></span></div>
+                        <div><strong>L10</strong> (Epic Review): <span id="l10-fail-targets"></span></div>
+                        <div><strong>L11</strong> (Final Review): <span id="l11-fail-targets"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div><!-- End collapsible-content for cascade -->
+
+    <!-- NESTED HIERARCHY SECTION -->
+    <div class="section-title collapsible" data-section="hierarchy-content" onclick="toggleSection('hierarchy-content')">
+        <span>📐 Nested Hierarchy</span>
+        <span class="toggle-icon">▼</span>
+    </div>
+    <div class="collapsible-content" id="hierarchy-content">
+    <div class="hierarchy-section">
+        <p style="margin-bottom: 24px; color: var(--gray-500); max-width: 700px;">
+            Projects are decomposed into <strong>4 levels of nested hierarchy</strong>. At each level:
+            <strong>Plan → GAN Review → (Pass? Next level : Expand more)</strong>.
+            Human approves the full plan before building begins.
+        </p>
+
+        <div class="hierarchy-diagram">
+            <!-- Epic Level -->
+            <div class="hierarchy-level">
+                <div class="hierarchy-label clickable" onclick="openLayerModal('L4')" title="Click for L4 details">Epics ↗</div>
+                <div class="hierarchy-content">
+                    <div class="hierarchy-box stage" style="background: rgba(255,107,53,0.1); font-weight: 500;">1. Auth System</div>
+                    <span class="hierarchy-arrow">→</span>
+                    <div class="hierarchy-box stage">2. Dashboard</div>
+                    <span class="hierarchy-arrow">→</span>
+                    <div class="hierarchy-box stage">3. Integrations</div>
+                    <span class="hierarchy-arrow">→</span>
+                    <div class="hierarchy-box stage">4. Polish</div>
+                </div>
+            </div>
+            <div class="hierarchy-breakdown">
+                <strong>L4:</strong> Plan 3+ epics → <span style="color: #8b5cf6;">GAN</span> → Pass? Continue : Expand
+            </div>
+
+            <!-- Feature Level -->
+            <div class="hierarchy-level" style="margin-top: 16px;">
+                <div class="hierarchy-label clickable" onclick="openLayerModal('L5')" title="Click for L5 details">Features ↗</div>
+                <div class="hierarchy-content" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div style="font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.1em;">↳ Epic 1: Auth System</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="hierarchy-box chunk" style="background: rgba(59,130,246,0.1); font-weight: 500;">Login Flow</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box chunk">Registration</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box chunk">Password Reset</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box chunk">Sessions</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hierarchy-breakdown">
+                <strong>L5:</strong> Plan 3+ features/epic → <span style="color: #8b5cf6;">GAN</span> → Pass? Continue : Expand
+            </div>
+
+            <!-- Task Level -->
+            <div class="hierarchy-level" style="margin-top: 16px;">
+                <div class="hierarchy-label clickable" onclick="openLayerModal('L6')" title="Click for L6 details">Tasks ↗</div>
+                <div class="hierarchy-content" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div style="font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.1em;">↳ Feature: Login Flow</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="hierarchy-box task" style="background: rgba(34,197,94,0.1); font-weight: 500;">Login form UI</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box task">Validate creds</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box task">Error handling</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box task">Remember me</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hierarchy-breakdown">
+                <strong>L6:</strong> Plan 3+ tasks/feature → <span style="color: #8b5cf6;">GAN</span> → Pass? Continue : Expand
+            </div>
+
+            <!-- Subtask Level -->
+            <div class="hierarchy-level" style="margin-top: 16px;">
+                <div class="hierarchy-label clickable" onclick="openLayerModal('L7')" title="Click for L7 details">Subtasks ↗</div>
+                <div class="hierarchy-content" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div style="font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.1em;">↳ Task: Login form UI</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="hierarchy-box" style="border-left: 3px solid #6366f1; background: rgba(99,102,241,0.1);">Add email input</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box" style="border-left: 3px solid #6366f1;">Add password input</div>
+                        <span class="hierarchy-arrow">→</span>
+                        <div class="hierarchy-box" style="border-left: 3px solid #6366f1;">Add submit button</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hierarchy-breakdown">
+                <strong>L7:</strong> Plan 2+ subtasks/task → <span style="color: #8b5cf6;">GAN</span> → Pass? <span style="color: #f59e0b;">Human Approval</span> → Build
+            </div>
+        </div>
+
+    </div>
+    </div><!-- End collapsible-content for hierarchy -->
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot orchestrator"></div>Ralph (Start/Check)</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--planner);"></div>Claude Planner</div>
+        <div class="legend-item"><div class="legend-dot builder"></div>Claude Builder</div>
+        <div class="legend-item"><div class="legend-dot reviewer"></div>Claude Reviewer (GAN)</div>
+        <div class="legend-item"><div class="legend-dot user"></div>Human</div>
+    </div>
+
+    <!-- DATA EXPLORER -->
+    <div class="section-title">📊 Data Explorer</div>
+    <p style="color: var(--gray-500); margin: 0 40px 24px 40px; max-width: 700px;">
+        Click any layer to view its full specification and prompt template.
+        All visualizations above render from the <code style="background: var(--gray-200); padding: 2px 6px; border-radius: 3px; font-size: 12px;">LAYER_CAKE</code> data structure.
+    </p>
+
+    <div class="data-explorer">
+        <!-- Layer Selector -->
+        <div class="layer-selector">
+            <div class="selector-header">Layers</div>
+            <div id="layer-buttons"></div>
+        </div>
+
+        <!-- Layer Detail Panel -->
+        <div class="layer-detail" id="layer-detail">
+            <div class="detail-placeholder">
+                ← Select a layer to view details
+            </div>
+        </div>
+    </div>
+
+    <!-- Hierarchy Stats -->
+    <div class="hierarchy-stats">
+        <h3>📐 Hierarchy Calculator</h3>
+
+        <!-- Tier Presets -->
+        <div class="tier-presets">
+            <div class="preset-label">Quick Presets:</div>
+            <div class="preset-buttons" id="preset-buttons">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Custom Calculator -->
+        <div class="stats-calculator">
+            <div class="stat-inputs">
+                <label>Epics: <input type="number" id="epic-count" value="3" min="1" max="10"></label>
+                <label>Features/Epic: <input type="number" id="feature-count" value="3" min="2" max="10"></label>
+                <label>Tasks/Feature: <input type="number" id="task-count" value="3" min="2" max="10"></label>
+                <label>Subtasks/Task: <input type="number" id="subtask-count" value="2" min="1" max="10"></label>
+            </div>
+            <div class="stat-result">
+                = <span id="total-subtasks">54</span> minimum subtasks
+                <span id="tier-indicator" class="tier-indicator"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+
+    <!-- Export/Import Buttons -->
+    <div style="text-align: center; margin: 2rem 0; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button class="export-btn" onclick="exportLayerCake()">
+            📤 Export as JSON File
+        </button>
+        <button class="export-btn" onclick="copyLayerCakeToClipboard()" style="background: var(--gray-600);">
+            📋 Copy JSON to Clipboard
+        </button>
+        <button class="export-btn" onclick="document.getElementById('import-file-input').click()" style="background: var(--review);">
+            📥 Import JSON
+        </button>
+    </div>
+
+    <style>
+        .data-explorer {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 24px;
+            margin: 0 40px 40px 40px;
+        }
+
+        .layer-selector {
+            background: var(--gray-100);
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .selector-header {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gray-400);
+            margin-bottom: 12px;
+        }
+
+        .layer-btn {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: var(--black);
+            text-align: left;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .layer-btn:hover {
+            background: var(--gray-200);
+        }
+
+        .layer-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .layer-btn .layer-id {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .layer-detail {
+            background: var(--gray-100);
+            border-radius: 4px;
+            padding: 24px;
+            min-height: 400px;
+        }
+
+        .detail-placeholder {
+            color: var(--gray-400);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .detail-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .detail-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h4 {
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .detail-section p, .detail-section ul {
+            margin: 0;
+            color: var(--black);
+            font-size: 13px;
+        }
+
+        .detail-section ul {
+            padding-left: 20px;
+        }
+
+        .detail-section li {
+            margin-bottom: 4px;
+        }
+
+        .detail-section code {
+            background: var(--gray-200);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .prompt-block {
+            background: var(--black);
+            color: var(--gray-300);
+            border-radius: 4px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .flow-indicator {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .flow-target {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .flow-target.pass { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+        .flow-target.minor { background: rgba(251, 191, 36, 0.15); color: #d97706; }
+        .flow-target.major { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+        .flow-target.escalate { background: rgba(139, 92, 246, 0.15); color: #7c3aed; }
+
+        .hierarchy-stats {
+            background: var(--gray-100);
+            border-radius: 4px;
+            padding: 24px;
+            margin: 0 40px 24px 40px;
+        }
+
+        .hierarchy-stats h3 {
+            margin: 0 0 16px 0;
+            font-size: 14px;
+        }
+
+        /* Tier Presets */
+        .tier-presets {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .preset-label {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            background: var(--white);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--accent);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .preset-btn.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: white;
+        }
+
+        .preset-btn .preset-name {
+            font-weight: 600;
+        }
+
+        .preset-btn .preset-total {
+            opacity: 0.7;
+            font-size: 10px;
+            margin-left: 6px;
+        }
+
+        .tier-indicator {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        .tier-indicator.micro { background: #dbeafe; color: #1d4ed8; }
+        .tier-indicator.small { background: #d1fae5; color: #047857; }
+        .tier-indicator.medium { background: #fef3c7; color: #b45309; }
+        .tier-indicator.large { background: #fee2e2; color: #b91c1c; }
+
+        .stats-calculator {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-inputs {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stat-inputs label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .stat-inputs input {
+            width: 50px;
+            padding: 4px 8px;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            background: var(--white);
+            color: var(--black);
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .stat-result {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--accent);
+        }
+
+        #total-subtasks {
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        .export-btn {
+            padding: 12px 24px;
+            background: var(--black);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background: var(--gray-600);
+        }
+
+        @media (max-width: 768px) {
+            .data-explorer {
+                grid-template-columns: 1fr;
+                margin: 0 20px 40px 20px;
+            }
+            .hierarchy-stats {
+                margin: 0 20px 24px 20px;
+            }
+        }
+    </style>
+
+    <script>
+        // Initialize the Data Explorer
+        document.addEventListener('DOMContentLoaded', function() {
+            initLayerButtons();
+            initHierarchyCalculator();
+        });
+
+        function initLayerButtons() {
+            const container = document.getElementById('layer-buttons');
+            LAYER_CAKE.layers.forEach(layer => {
+                const btn = document.createElement('button');
+                btn.className = 'layer-btn';
+                btn.innerHTML = `<span class="layer-id">${layer.id}</span>${layer.name}`;
+                btn.onclick = () => selectLayer(layer.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectLayer(layerId) {
+            // Update button states
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.querySelector('.layer-id').textContent === layerId);
+            });
+
+            // Open the modal with full details (reuse the same modal as blueprint)
+            openLayerModal(layerId);
+        }
+
+        function initHierarchyCalculator() {
+            // Initialize preset buttons
+            initPresetButtons();
+
+            // Set up input listeners
+            const inputs = ['epic-count', 'feature-count', 'task-count', 'subtask-count'];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', () => {
+                    updateTotal();
+                    clearActivePreset();
+                });
+            });
+
+            // Initial update
+            updateTotal();
+        }
+
+        function initPresetButtons() {
+            const container = document.getElementById('preset-buttons');
+            if (!container) return;
+
+            container.innerHTML = Object.entries(TIER_PRESETS).map(([key, tier]) => {
+                const total = getTierTotal(tier);
+                return `<button class="preset-btn" data-tier="${key}" onclick="selectPreset('${key}')">
+                    <span class="preset-name">${tier.name}</span>
+                    <span class="preset-total">(${total})</span>
+                </button>`;
+            }).join('');
+
+            // Set "small" as default active
+            selectPreset('small');
+        }
+
+        function selectPreset(tierKey) {
+            const tier = TIER_PRESETS[tierKey];
+            if (!tier) return;
+
+            // Update input values
+            document.getElementById('epic-count').value = tier.epics;
+            document.getElementById('feature-count').value = tier.features;
+            document.getElementById('task-count').value = tier.tasks;
+            document.getElementById('subtask-count').value = tier.subtasks;
+
+            // Update active state
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tier === tierKey);
+            });
+
+            // Update total
+            updateTotal(tierKey);
+        }
+
+        function clearActivePreset() {
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tier-indicator').textContent = '';
+            document.getElementById('tier-indicator').className = 'tier-indicator';
+        }
+
+        function updateTotal(activeTier = null) {
+            const epics = parseInt(document.getElementById('epic-count').value) || 3;
+            const features = parseInt(document.getElementById('feature-count').value) || 3;
+            const tasks = parseInt(document.getElementById('task-count').value) || 3;
+            const subtasks = parseInt(document.getElementById('subtask-count').value) || 2;
+
+            const total = LAYER_CAKE.getMinSubtasks(epics, features, tasks, subtasks);
+            document.getElementById('total-subtasks').textContent = total.toLocaleString();
+
+            // Update tier indicator
+            const indicator = document.getElementById('tier-indicator');
+            if (activeTier && TIER_PRESETS[activeTier]) {
+                indicator.textContent = TIER_PRESETS[activeTier].name;
+                indicator.className = `tier-indicator ${activeTier}`;
+            } else {
+                // Try to detect which tier this matches
+                const matchedTier = Object.entries(TIER_PRESETS).find(([key, tier]) =>
+                    tier.epics === epics && tier.features === features &&
+                    tier.tasks === tasks && tier.subtasks === subtasks
+                );
+                if (matchedTier) {
+                    indicator.textContent = matchedTier[1].name;
+                    indicator.className = `tier-indicator ${matchedTier[0]}`;
+                } else {
+                    indicator.textContent = 'Custom';
+                    indicator.className = 'tier-indicator';
+                    indicator.style.background = '#f3f4f6';
+                    indicator.style.color = '#6b7280';
+                }
+            }
+        }
+
+        function exportLayerCake() {
+            // Use sanitizeForExport for proper function handling and metadata
+            const sanitized = sanitizeForExport();
+            const jsonString = JSON.stringify(sanitized, null, 2);
+
+            // Generate timestamped filename
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `layer-cake-v${LAYER_CAKE.meta.version}-${timestamp}.json`;
+
+            // Create download
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showToast(`Exported ${filename}`, 'success');
+        }
+
+        /**
+         * Copy LAYER_CAKE JSON to clipboard
+         */
+        function copyLayerCakeToClipboard() {
+            const sanitized = sanitizeForExport();
+            const jsonString = JSON.stringify(sanitized, null, 2);
+            copyToClipboard(jsonString, 'LAYER_CAKE JSON copied to clipboard');
+        }
+
+        // Import JSON file handler
+        document.getElementById('import-file-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const result = importLayerCake(e.target.result);
+                if (result.success) {
+                    // Update LAYER_CAKE data sections from imported data
+                    const data = result.data;
+                    if (data.meta) LAYER_CAKE.meta = data.meta;
+                    if (data.actors) LAYER_CAKE.actors = data.actors;
+                    if (data.hierarchy) LAYER_CAKE.hierarchy = data.hierarchy;
+                    if (data.layers) LAYER_CAKE.layers = data.layers;
+                    if (data.gates) LAYER_CAKE.gates = data.gates;
+                    if (data.failCascade) LAYER_CAKE.failCascade = data.failCascade;
+
+                    // Re-render the blueprint and cascade sections
+                    renderBlueprint();
+                    initCascadeSection();
+
+                    const version = result.meta?.version || 'unknown';
+                    showToast(`Imported Layer Cake v${version} from ${file.name}`, 'success');
+                } else {
+                    showToast(`Import failed: ${result.error}`, 'error', 5000);
+                }
+            };
+            reader.onerror = function() {
+                showToast('Failed to read file', 'error');
+            };
+            reader.readAsText(file);
+
+            // Reset file input so the same file can be re-imported
+            event.target.value = '';
+        });
+    </script>
+</body>
+</html>

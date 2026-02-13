@@ -229,7 +229,7 @@ fn get_layer_rules(layer: Layer) -> String {
         Layer::Outline => "5. Order chunks by dependency\n6. Each chunk should be independent",
         Layer::ChunkPlanning => "5. Specs must have acceptance criteria\n6. Include edge cases",
         Layer::Implementation => "5. Follow the spec exactly\n6. Commit after each item",
-        Layer::ChunkReview => "5. Test via /chrome\n6. Be critical, not charitable",
+        Layer::ChunkReview => "5. Test via Playwright MCP or curl/tests if unavailable\n6. Be critical, not charitable",
         Layer::Integration => "5. Test cross-feature interactions\n6. Check error handling",
         Layer::FinalReview => "5. Full UX walkthrough\n6. Check consistency",
         Layer::Analysis => "5. Be honest about what didn't work\n6. Extract actionable learnings",

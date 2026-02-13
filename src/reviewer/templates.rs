@@ -56,7 +56,7 @@ You are now the CRITIC, not the builder. Your job is to find problems, not excus
 
 1. **For each spec:**
    - Read the acceptance criteria carefully
-   - Test EVERY criterion via /chrome
+   - Test EVERY criterion via Playwright MCP (mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, etc.) or via curl/tests if Playwright is unavailable
    - Try edge cases the builder might have missed
    - Check error handling
    - Note any issues found
@@ -114,7 +114,7 @@ You are now the CRITIC, not the builder. Your job is to find problems, not excus
 
 ## Rules
 
-1. Test via /chrome - actually click through and verify
+1. Test via Playwright MCP (or curl/tests if unavailable) - actually verify the UI works
 2. Be critical, not charitable - if something feels off, flag it
 3. Don't mark PASS just because it "mostly works"
 4. If 3 review iterations fail, verdict becomes ESCALATE
@@ -173,7 +173,7 @@ Verify that all chunks work together as a cohesive system.
    - State management across features
 
 2. **Run Integration Tests:**
-   For each scenario via /chrome:
+   For each scenario via Playwright MCP (or curl/tests if unavailable):
    - Test the complete flow
    - Check data persists correctly
    - Verify state updates properly
@@ -266,7 +266,7 @@ You are the final quality gate. Would YOU ship this?
 ## Final Review Process
 
 1. **Complete UX Walkthrough:**
-   Via /chrome, use the app as a real user would:
+   Via Playwright MCP (or curl/tests if unavailable), use the app as a real user would:
    - Complete all major user journeys
    - Try to break things
    - Check edge cases

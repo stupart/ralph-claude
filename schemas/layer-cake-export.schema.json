@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ralph-claude/schemas/layer-cake-export.schema.json",
+  "title": "Layer Cake Export Schema",
+  "description": "JSON Schema for Layer Cake methodology export format. Used by Ralph for importing/exporting Layer Cake configurations.",
+  "$comment": "Functions (getLayer, getActor, getHierarchyLevel, getMinSubtasks) are replaced with '[Function: name]' strings in exports since JSON cannot represent JavaScript functions.",
+  "type": "object",
+  "required": ["meta", "actors", "hierarchy", "layers", "gates", "failCascade", "_export"],
+  "properties": {
+    "_export": {
+      "type": "object",
+      "description": "Export metadata added during export process",
+      "required": ["schemaVersion", "exportTimestamp"],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "description": "Version of the export schema (semver format)",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "exportTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when the export was created"
+        },
+        "sourceFile": {
+          "type": "string",
+          "description": "Optional: path to source file that generated this export"
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the Layer Cake methodology",
+      "required": ["version", "name", "description"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Version of the Layer Cake methodology (e.g., '3.0')"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the methodology"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of what Layer Cake does"
+        }
+      }
+    },
+    "actors": {
+      "type": "object",
+      "description": "Map of actor IDs to actor definitions. Actors are the entities that perform work in the methodology.",
+      "additionalProperties": {
+        "$ref": "#/definitions/Actor"
+      }
+    },
+    "hierarchy": {
+      "type": "object",
+      "description": "Definition of the nested planning hierarchy (epic -> feature -> task -> subtask)",
+      "properties": {
+        "epic": { "$ref": "#/definitions/HierarchyLevel" },
+        "feature": { "$ref": "#/definitions/HierarchyLevel" },
+        "task": { "$ref": "#/definitions/HierarchyLevel" },
+        "subtask": { "$ref": "#/definitions/HierarchyLevel" }
+      },
+      "required": ["epic", "feature", "task", "subtask"]
+    },
+    "layers": {
+      "type": "array",
+      "description": "Array of all 12 layers in the methodology, in order L1-L12",
+      "items": { "$ref": "#/definitions/Layer" },
+      "minItems": 12,
+      "maxItems": 12
+    },
+    "gates": {
+      "type": "object",
+      "description": "Gate definitions - checkpoints that require approval or review",
+      "properties": {
+        "humanApproval": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Layer IDs that require human approval (e.g., ['L3', 'L7'])"
+        },
+        "ganPlanReview": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Layer IDs where GAN reviews planning artifacts"
+        },
+        "ganBuildReview": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Layer IDs where GAN reviews build artifacts"
+        }
+      },
+      "required": ["humanApproval", "ganPlanReview", "ganBuildReview"]
+    },
+    "failCascade": {
+      "type": "object",
+      "description": "Rules for handling failures at different severity levels",
+      "properties": {
+        "minor": {
+          "type": "string",
+          "description": "Rule for minor failures (typically: retry at same layer)"
+        },
+        "major": {
+          "type": "string",
+          "description": "Rule for major failures (typically: go back one hierarchy level)"
+        },
+        "escalate": {
+          "type": "string",
+          "description": "Rule for escalations (typically: go back two+ hierarchy levels)"
+        },
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum retries before escalating to next severity level"
+        }
+      },
+      "required": ["minor", "major", "escalate", "maxRetries"]
+    },
+    "getLayer": {
+      "type": "string",
+      "description": "Placeholder for getLayer function (excluded in export)",
+      "pattern": "^\\[Function: .*\\]$"
+    },
+    "getActor": {
+      "type": "string",
+      "description": "Placeholder for getActor function (excluded in export)",
+      "pattern": "^\\[Function: .*\\]$"
+    },
+    "getHierarchyLevel": {
+      "type": "string",
+      "description": "Placeholder for getHierarchyLevel function (excluded in export)",
+      "pattern": "^\\[Function: .*\\]$"
+    },
+    "getMinSubtasks": {
+      "type": "string",
+      "description": "Placeholder for getMinSubtasks function (excluded in export)",
+      "pattern": "^\\[Function: .*\\]$"
+    }
+  },
+  "definitions": {
+    "Actor": {
+      "type": "object",
+      "description": "An actor that performs work in the methodology",
+      "required": ["id", "label", "color", "role"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the actor (e.g., 'planner', 'builder')"
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable display name (e.g., 'Claude Planner')"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Hex color code for visualization"
+        },
+        "role": {
+          "type": "string",
+          "description": "Description of what this actor does"
+        }
+      }
+    },
+    "HierarchyLevel": {
+      "type": "object",
+      "description": "A level in the planning hierarchy",
+      "required": ["min", "layer"],
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum count required at this level"
+        },
+        "layer": {
+          "type": "string",
+          "pattern": "^L\\d+$",
+          "description": "Which layer creates items at this level"
+        },
+        "parent": {
+          "type": ["string", "null"],
+          "description": "Parent level type (null for top level)"
+        },
+        "timeScale": {
+          "type": "string",
+          "enum": ["weeks", "days", "hours", "minutes"],
+          "description": "Expected time scale for items at this level"
+        }
+      }
+    },
+    "LayerCheck": {
+      "type": ["object", "null"],
+      "description": "Completion check criteria for a layer",
+      "properties": {
+        "min": {
+          "type": "integer",
+          "description": "Minimum count required"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of item being checked"
+        },
+        "per": {
+          "type": "string",
+          "description": "Scope for hierarchical checks (e.g., 'epic', 'feature')"
+        },
+        "value": {
+          "type": "string",
+          "description": "Expected value for verdict checks"
+        }
+      }
+    },
+    "FailRouting": {
+      "type": "object",
+      "description": "Complex fail routing with severity-based targets",
+      "properties": {
+        "minor": {
+          "type": "string",
+          "description": "Target layer for minor failures"
+        },
+        "major": {
+          "type": "string",
+          "description": "Target layer for major failures"
+        },
+        "escalate": {
+          "type": "string",
+          "description": "Target layer for escalations"
+        }
+      }
+    },
+    "Layer": {
+      "type": "object",
+      "description": "A layer in the Layer Cake methodology",
+      "required": ["id", "name", "phase", "actor", "action", "description", "outputs", "humanGate", "onPass", "prompt"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^L\\d+$",
+          "description": "Layer identifier (L1-L12)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable layer name"
+        },
+        "phase": {
+          "type": "string",
+          "enum": ["understand", "plan", "build", "review", "learn"],
+          "description": "Which phase this layer belongs to"
+        },
+        "actor": {
+          "type": "string",
+          "description": "Actor ID responsible for this layer"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action verb describing what happens"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of layer purpose"
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "File paths or artifacts produced"
+        },
+        "check": {
+          "$ref": "#/definitions/LayerCheck",
+          "description": "Completion check criteria"
+        },
+        "reviewType": {
+          "type": ["string", "null"],
+          "enum": ["plan", "build", null],
+          "description": "Type of review if this layer is reviewed"
+        },
+        "humanGate": {
+          "type": "boolean",
+          "description": "Whether human approval is required after this layer"
+        },
+        "onPass": {
+          "type": ["string", "null"],
+          "description": "Next layer ID on success, 'COMPLETE', or null"
+        },
+        "onFail": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/FailRouting" },
+            { "type": "null" }
+          ],
+          "description": "Routing on failure"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Full prompt template for the agent"
+        }
+      }
+    }
+  }
+}

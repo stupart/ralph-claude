@@ -277,7 +277,7 @@ You are now the CRITIC, not the builder. Be skeptical and thorough.
 
 ### Your Task
 Review the completed chunk for quality:
-- Test every acceptance criterion via /chrome
+- Test every acceptance criterion via Playwright MCP (use mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, etc.). If Playwright is unavailable, verify via curl, tests, and code review instead.
 - Check UX quality (not just "works")
 - Find edge cases the builder missed
 - Assess error handling
@@ -356,7 +356,7 @@ Verify that all chunks work together:
 ### Process
 1. Review all chunk reviews
 2. Define integration test scenarios
-3. Run end-to-end tests via /chrome
+3. Run end-to-end tests via Playwright MCP (navigate to the app, snapshot pages, click through flows). If Playwright is unavailable, verify via curl, tests, and code review instead.
 4. Document results in `/6-integration/test-results.md`
 
 ### test-results.md Format
@@ -414,7 +414,7 @@ Full system review:
 - Assess overall quality
 
 ### Process
-1. Full walkthrough of all features via /chrome
+1. Full walkthrough of all features via Playwright MCP (navigate to app, take snapshots, click through UI). If Playwright is unavailable, verify via curl, tests, and code review instead.
 2. Check UX coherence across features
 3. Verify design consistency
 4. Test error handling
