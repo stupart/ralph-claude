@@ -5,7 +5,7 @@
  * Converted from custom runner to jest in gen4.
  */
 
-const { AgentSpawner, AGENT_MODEL, AGENT_CONFIGS, LAYER_AGENTS, TOOL_PERMISSIONS, LAYER_CONTEXT, normalizeAgentType } = require('../lib/agent-spawner');
+const { AgentSpawner, TemplateCache, AGENT_MODEL, AGENT_CONFIGS, LAYER_AGENTS, TOOL_PERMISSIONS, LAYER_CONTEXT, normalizeAgentType } = require('../lib/agent-spawner');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
@@ -233,5 +233,107 @@ describe('Agent type normalization', () => {
     const spawner = new AgentSpawner(TEST_ROOT);
     expect(spawner.validateToolUsage('reviewer', 'Read').allowed).toBe(true);
     expect(spawner.validateToolUsage('reviewer', 'Write').allowed).toBe(false);
+  });
+});
+
+describe('TemplateCache', () => {
+  test('returns null on cache miss', async () => {
+    const cache = new TemplateCache();
+    const result = await cache.get('/nonexistent/path.md');
+    expect(result).toBeNull();
+  });
+
+  test('caches and retrieves file content', async () => {
+    const cache = new TemplateCache();
+    const filePath = path.join(TEST_ROOT, 'templates', 'agents', 'planner-base.md');
+    const stat = await fs.stat(filePath);
+    const content = await fs.readFile(filePath, 'utf8');
+
+    cache.set(filePath, content, stat.mtimeMs);
+    const cached = await cache.get(filePath);
+    expect(cached).toBe(content);
+  });
+
+  test('invalidates cache when file mtime changes', async () => {
+    const cache = new TemplateCache();
+    const filePath = path.join(TEST_ROOT, 'templates', 'agents', 'planner-base.md');
+
+    // Cache with old mtime
+    cache.set(filePath, 'old content', 1000);
+    const result = await cache.get(filePath);
+    // mtime won't match the fake 1000ms, so should invalidate
+    expect(result).toBeNull();
+    expect(cache.size).toBe(0); // evicted
+  });
+
+  test('evicts oldest entry when at capacity', async () => {
+    const cache = new TemplateCache(2);
+    const filePath1 = path.join(TEST_ROOT, 'templates', 'agents', 'planner-base.md');
+    const filePath2 = path.join(TEST_ROOT, 'templates', 'agents', 'builder-base.md');
+    const filePath3 = path.join(TEST_ROOT, 'templates', 'agents', 'judge-base.md');
+
+    const stat1 = await fs.stat(filePath1);
+    const stat2 = await fs.stat(filePath2);
+    const stat3 = await fs.stat(filePath3);
+
+    cache.set(filePath1, 'planner', stat1.mtimeMs);
+    cache.set(filePath2, 'builder', stat2.mtimeMs);
+    expect(cache.size).toBe(2);
+
+    // Adding a third should evict the first (oldest)
+    cache.set(filePath3, 'judge', stat3.mtimeMs);
+    expect(cache.size).toBe(2);
+
+    // filePath1 should have been evicted from the internal Map
+    expect(cache.cache.has(filePath1)).toBe(false);
+    // filePath2 and filePath3 should still be present
+    expect(cache.cache.has(filePath2)).toBe(true);
+    expect(cache.cache.has(filePath3)).toBe(true);
+  });
+
+  test('clear removes all entries', () => {
+    const cache = new TemplateCache();
+    cache.set('/a', 'a', 1);
+    cache.set('/b', 'b', 2);
+    expect(cache.size).toBe(2);
+
+    cache.clear();
+    expect(cache.size).toBe(0);
+  });
+});
+
+describe('Cached prompt loading', () => {
+  test('loadPromptTemplate returns same result on second call (from cache)', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const first = await spawner.loadPromptTemplate('planner');
+    const second = await spawner.loadPromptTemplate('planner');
+    expect(first).toBe(second);
+    expect(spawner.templateCache.size).toBeGreaterThan(0);
+  });
+
+  test('readCachedFile returns cached content on second read', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const filePath = path.join(TEST_ROOT, 'templates', 'agents', 'planner-base.md');
+
+    const first = await spawner.readCachedFile(filePath);
+    expect(spawner.templateCache.size).toBe(1);
+
+    const second = await spawner.readCachedFile(filePath);
+    expect(second).toBe(first);
+  });
+
+  test('readCachedFile invalidates on file change', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const filePath = path.join(TEST_ROOT, 'templates', 'agents', 'planner-base.md');
+
+    const first = await spawner.readCachedFile(filePath);
+
+    // Modify the file (with a small delay to ensure mtime differs)
+    await new Promise(r => setTimeout(r, 50));
+    await fs.writeFile(filePath, 'Updated planner template.\n{{LAYER_INSTRUCTIONS}}');
+
+    const second = await spawner.readCachedFile(filePath);
+    expect(second).not.toBe(first);
+    expect(second).toContain('Updated planner template');
   });
 });
