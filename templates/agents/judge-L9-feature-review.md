@@ -56,10 +56,17 @@ npm test -- --grep "{feature_name}"
 - [ ] Tests cover error cases
 - [ ] All tests pass
 
-### Step 4: UX Review via /chrome
+### Step 4: UX Review (Browser or Fallback)
 
-This is critical. Use browser automation to test the actual experience:
+If `/chrome` or Playwright MCP is available, use browser automation to test the actual experience. **If browser tools are unavailable or unresponsive, do NOT block on this step.** Fall back to the alternative verification chain below.
 
+**Verification priority chain:**
+1. **Browser automation** (`/chrome` or Playwright MCP) - preferred for visual/UX verification
+2. **Automated tests** (`npm test`, `jest`, `pytest`, etc.) - verify behavior programmatically
+3. **curl / API testing** - verify endpoints respond correctly
+4. **Code review** - verify logic by reading the implementation
+
+If using browser automation (option 1):
 ```
 1. Navigate to the feature in the application
 2. Test each acceptance criterion from the spec
@@ -67,7 +74,7 @@ This is critical. Use browser automation to test the actual experience:
 4. Assess general UX quality
 ```
 
-**UX Checklist:**
+**UX Checklist (when browser is available):**
 - [ ] Feature is discoverable/accessible
 - [ ] UI matches design intent (if specified)
 - [ ] Loading states are handled
@@ -75,6 +82,8 @@ This is critical. Use browser automation to test the actual experience:
 - [ ] Success states are clear
 - [ ] No broken layouts or visual glitches
 - [ ] Interactions feel responsive
+
+**If browser is NOT available**, note "UX review skipped: browser tools unavailable" in your review and verify all acceptance criteria through tests and code inspection instead. Do not issue ITERATE solely because browser testing was unavailable.
 
 ### Step 5: Acceptance Criteria Verification
 
@@ -121,6 +130,16 @@ For each issue, include:
 {How to fix it}
 ```
 
+### Step 6: Documentation Check
+
+Verify that documentation matches the implementation:
+- [ ] JSDoc or inline comments exist for public functions
+- [ ] Any user-facing docs referenced in the spec are present and current
+- [ ] No stale references to old APIs, removed functions, or renamed files
+- [ ] If a `naming-conventions.md` exists in `/3-synthesis/`, verify the feature's code follows those conventions
+
+This is not about requiring extensive docs. It is about catching stale docs (e.g., docs that describe V2 when V3 shipped) and missing docs that the spec explicitly requires.
+
 ## Pass Criteria
 
 PASS if:
@@ -129,6 +148,7 @@ PASS if:
 - [ ] UX is acceptable (functional and usable)
 - [ ] No MAJOR or ESCALATE issues remain
 - [ ] Any MINOR issues are documented but non-blocking
+- [ ] No stale documentation that contradicts the implementation
 
 ITERATE if:
 - Any acceptance criterion is not met
