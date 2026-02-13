@@ -338,6 +338,74 @@ describe('Cached prompt loading', () => {
   });
 });
 
+describe('Iteration learning', () => {
+  test('buildIterationLearning returns empty string for no issues', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    expect(spawner.buildIterationLearning([])).toBe('');
+    expect(spawner.buildIterationLearning(null)).toBe('');
+    expect(spawner.buildIterationLearning(undefined)).toBe('');
+  });
+
+  test('buildIterationLearning formats issues as numbered list', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const issues = [
+      { title: 'Missing tests', severity: 'MINOR' },
+      { title: 'Wrong API design', severity: 'MAJOR' }
+    ];
+    const result = spawner.buildIterationLearning(issues, 2);
+    expect(result).toContain('Lessons from Previous Iteration (iteration 2)');
+    expect(result).toContain('1. **[MINOR]** Missing tests');
+    expect(result).toContain('2. **[MAJOR]** Wrong API design');
+    expect(result).toContain('Do NOT repeat these mistakes');
+    expect(result).toContain('Fix the highest-severity issues first');
+  });
+
+  test('buildIterationLearning includes description when present', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const issues = [
+      { title: 'Missing tests', severity: 'MINOR', description: 'Need unit tests for the auth module' }
+    ];
+    const result = spawner.buildIterationLearning(issues);
+    expect(result).toContain('Need unit tests for the auth module');
+  });
+
+  test('buildIterationLearning handles issues without severity', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const issues = [{ title: 'Some issue' }];
+    const result = spawner.buildIterationLearning(issues);
+    expect(result).toContain('[UNKNOWN]');
+    expect(result).toContain('Some issue');
+  });
+
+  test('createSpawnConfig includes iteration learning when handoff has previousIssues', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const handoff = {
+      previousIssues: [
+        { title: 'Fix alignment', severity: 'MINOR' },
+        { title: 'Add error handling', severity: 'MAJOR' }
+      ],
+      iterationNumber: 2
+    };
+    const config = await spawner.createSpawnConfig('L8', {}, handoff);
+    expect(config.prompt).toContain('Lessons from Previous Iteration');
+    expect(config.prompt).toContain('Fix alignment');
+    expect(config.prompt).toContain('Add error handling');
+    expect(config.prompt).toContain('iteration 2');
+  });
+
+  test('createSpawnConfig does not include learning when no handoff', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const config = await spawner.createSpawnConfig('L8', {});
+    expect(config.prompt).not.toContain('Lessons from Previous Iteration');
+  });
+
+  test('createSpawnConfig does not include learning when handoff has empty issues', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const config = await spawner.createSpawnConfig('L8', {}, { previousIssues: [] });
+    expect(config.prompt).not.toContain('Lessons from Previous Iteration');
+  });
+});
+
 describe('Context budget estimation', () => {
   test('estimateTokens returns approximate token count', () => {
     const spawner = new AgentSpawner(TEST_ROOT);

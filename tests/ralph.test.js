@@ -538,6 +538,70 @@ describe('LayerTimer', () => {
   });
 });
 
+describe('Ralph iteration learning', () => {
+  test('stores review issues for next builder iteration', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+    await seedProjectArtifacts(testDir);
+
+    // Set to L9 review
+    ralph.state.state.position.layer = 'L9';
+    ralph.state.state.gates.L3 = { status: 'approved' };
+    ralph.state.state.gates.L7 = { status: 'approved' };
+    await ralph.state.write();
+
+    const issues = [
+      { title: 'Missing test', severity: 'MINOR' },
+      { title: 'Bad naming', severity: 'MINOR' }
+    ];
+
+    await ralph.onLayerComplete('L9', {
+      reviewResult: { verdict: 'ITERATE', issues }
+    });
+
+    // Previous issues should be stored
+    expect(ralph._previousIterationIssues).toEqual(issues);
+  });
+
+  test('clears previous issues on PASS verdict', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+    await seedProjectArtifacts(testDir);
+
+    // Store some previous issues
+    ralph._previousIterationIssues = [{ title: 'Old issue', severity: 'MINOR' }];
+
+    // Set to L9 review with PASS
+    ralph.state.state.position.layer = 'L9';
+    ralph.state.state.gates.L3 = { status: 'approved' };
+    ralph.state.state.gates.L7 = { status: 'approved' };
+    await ralph.state.write();
+
+    await ralph.onLayerComplete('L9', {
+      reviewResult: { verdict: 'PASS', issues: [] }
+    });
+
+    // Previous issues should be cleared
+    expect(ralph._previousIterationIssues).toBeNull();
+  });
+
+  test('runNextLayer passes previous issues as handoff to spawner', async () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+
+    // Set previous issues
+    ralph._previousIterationIssues = [
+      { title: 'Fix alignment', severity: 'MINOR' }
+    ];
+
+    const result = await ralph.runNextLayer();
+    expect(result.status).toBe('spawn');
+    expect(result.spawnConfig.handoff).toBeDefined();
+    expect(result.spawnConfig.handoff.previousIssues).toHaveLength(1);
+    expect(result.spawnConfig.handoff.previousIssues[0].title).toBe('Fix alignment');
+  });
+});
+
 describe('Ralph timing integration', () => {
   test('getStatus includes timing summary', async () => {
     const ralph = new Ralph(testDir, { verbose: false });
