@@ -14,6 +14,7 @@
  *   --dir <path>       Project directory (default: current directory)
  *   --verbose          Enable verbose output (default: true)
  *   --quiet            Disable verbose output
+ *   --dry-run          Show what would be spawned without executing
  *   --help             Show help
  */
 
@@ -33,7 +34,8 @@ function parseArgs(argv) {
       template: 'web-app',
       verbose: true,
       autoApproveGates: false,
-      timeout: 300000
+      timeout: 300000,
+      dryRun: false
     }
   };
 
@@ -66,6 +68,9 @@ function parseArgs(argv) {
         break;
       case '--timeout':
         result.options.timeout = parseInt(args[++i]) || 300000;
+        break;
+      case '--dry-run':
+        result.options.dryRun = true;
         break;
       case '--help':
         result.command = 'help';
@@ -108,6 +113,7 @@ Options:
   --quiet            Disable verbose output
   --auto-approve     Auto-approve human gates (L3, L7)
   --timeout <ms>     Agent timeout in milliseconds (default: 300000)
+  --dry-run          Show spawn config without executing agent
   --help             Show this help
 
 Examples:
@@ -214,7 +220,8 @@ async function cmdRun(options) {
     const ralph = new Ralph(options.dir, {
       verbose: options.verbose,
       autoApproveGates: options.autoApproveGates,
-      agentTimeout: options.timeout
+      agentTimeout: options.timeout,
+      dryRun: options.dryRun
     });
 
     const initResult = await ralph.initialize();

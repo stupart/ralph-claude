@@ -358,6 +358,41 @@ describe('Ralph', () => {
     }
   });
 
+  test('runLayerCycle in dry-run mode returns spawn config without executing', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, dryRun: true });
+    await ralph.initialize();
+
+    let executorCalled = false;
+    const executor = async () => {
+      executorCalled = true;
+      return {};
+    };
+
+    const result = await ralph.runLayerCycle(executor);
+    expect(result.status).toBe('dry_run');
+    expect(result.layerId).toBe('L1');
+    expect(result.spawnConfig).toBeDefined();
+    expect(result.spawnConfig.agentType).toBe('planner');
+    expect(result.spawnConfig.prompt).toBeDefined();
+    expect(result.spawnConfig.permissions).toBeDefined();
+    expect(result.spawnConfig.context).toBeDefined();
+    expect(executorCalled).toBe(false);
+  });
+
+  test('dry-run mode does not modify state', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, dryRun: true });
+    await ralph.initialize();
+
+    const stateBefore = await ralph.state.read();
+    const layerBefore = stateBefore.position.layer;
+
+    const executor = async () => ({ });
+    await ralph.runLayerCycle(executor);
+
+    const stateAfter = await ralph.state.read();
+    expect(stateAfter.position.layer).toBe(layerBefore);
+  });
+
   test('getStatus includes cost summary', async () => {
     const ralph = new Ralph(testDir, { verbose: false });
     await ralph.initialize();

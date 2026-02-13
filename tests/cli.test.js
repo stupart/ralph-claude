@@ -116,6 +116,16 @@ describe('parseArgs', () => {
     const result = parseArgs(['node', 'ralph-cli', 'run']);
     expect(result.options.verbose).toBe(true);
   });
+
+  test('parses --dry-run option', () => {
+    const result = parseArgs(['node', 'ralph-cli', 'run', '--dry-run']);
+    expect(result.options.dryRun).toBe(true);
+  });
+
+  test('defaults dryRun to false', () => {
+    const result = parseArgs(['node', 'ralph-cli', 'run']);
+    expect(result.options.dryRun).toBe(false);
+  });
 });
 
 describe('formatLayerLine', () => {
