@@ -163,6 +163,72 @@ describe('Context assembly', () => {
     const context = await spawner.assembleContext('L2');
     expect(context.files.length).toBeGreaterThan(0);
   });
+
+  test('assembleContext includes dependency list', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const context = await spawner.assembleContext('L4');
+    expect(context.dependencies).toBeDefined();
+    expect(context.dependencies).toContain('L3');
+  });
+
+  test('L1 has no dependencies and loads no prior layer files', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const context = await spawner.assembleContext('L1');
+    expect(context.dependencies).toEqual([]);
+  });
+});
+
+describe('Progressive context loading', () => {
+  test('getDependencyFolders returns correct folders for L4', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const folders = spawner.getDependencyFolders('L4');
+    expect(folders).toContain('3-synthesis');
+    expect(folders).not.toContain('1-input');
+    expect(folders).not.toContain('2-decomposition');
+  });
+
+  test('getDependencyFolders returns empty for L1', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const folders = spawner.getDependencyFolders('L1');
+    expect(folders).toEqual([]);
+  });
+
+  test('L4 only loads synthesis context, not input or decomposition', async () => {
+    // Create all folders
+    await fs.mkdir(path.join(TEST_ROOT, '1-input'), { recursive: true });
+    await fs.writeFile(path.join(TEST_ROOT, '1-input', 'brain-dump.md'), 'input');
+    await fs.mkdir(path.join(TEST_ROOT, '2-decomposition'), { recursive: true });
+    await fs.writeFile(path.join(TEST_ROOT, '2-decomposition', 'patterns.md'), 'patterns');
+    await fs.mkdir(path.join(TEST_ROOT, '3-synthesis'), { recursive: true });
+    await fs.writeFile(path.join(TEST_ROOT, '3-synthesis', 'jtbd.md'), 'jobs');
+
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const context = await spawner.assembleContext('L4');
+
+    // L4 depends on L3 (synthesis) only
+    const synthFiles = context.files.filter(f => f.includes('3-synthesis'));
+    const inputFiles = context.files.filter(f => f.includes('1-input'));
+    const decompFiles = context.files.filter(f => f.includes('2-decomposition'));
+
+    expect(synthFiles.length).toBeGreaterThan(0);
+    expect(inputFiles).toHaveLength(0);
+    expect(decompFiles).toHaveLength(0);
+  });
+
+  test('L8 only loads subtask context from L7', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const folders = spawner.getDependencyFolders('L8');
+    expect(folders).toContain('7-subtasks');
+    expect(folders).not.toContain('1-input');
+    expect(folders).not.toContain('5-features');
+  });
+
+  test('L9 loads both L5 and L7 artifacts', () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const folders = spawner.getDependencyFolders('L9');
+    expect(folders).toContain('5-features');
+    expect(folders).toContain('7-subtasks');
+  });
 });
 
 describe('Spawn config', () => {
