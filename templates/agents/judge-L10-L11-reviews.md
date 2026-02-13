@@ -16,14 +16,14 @@ You are reviewing the **complete epic** - all features should be implemented and
 - [ ] All features in the epic are at PASS from L9
 - [ ] No pending L9 reviews
 
-#### Step 2: Integration Testing via /chrome
+#### Step 2: Integration Testing
 
-Test cross-feature interactions:
+Test cross-feature interactions. If `/chrome` or Playwright MCP is available, use browser automation. **If browser tools are unavailable, do NOT block.** Fall back to tests, curl, or code review.
 
 ```
 1. Identify features that should work together
 2. Create integration test scenarios
-3. Execute via /chrome
+3. Execute via browser automation, tests, or code review (in priority order)
 4. Document any integration issues
 ```
 
@@ -68,19 +68,42 @@ This is the **final gate before shipping**. You are reviewing the entire project
 - [ ] All epics have passed L10
 - [ ] No pending reviews at any level
 
-#### Step 2: Full Journey Testing via /chrome
+#### Step 2: Full Journey Testing
 
-Walk through every user journey from synthesis:
+Walk through every user journey from synthesis. Use `/chrome` or Playwright MCP if available. **If browser tools are unavailable, do NOT block.** Verify journeys via tests, curl, or code review instead.
 
 ```
 For each journey in /3-synthesis/journeys.md:
-1. Execute the journey end-to-end
+1. Execute the journey end-to-end (browser, tests, or code review)
 2. Note any friction or issues
 3. Test error recovery paths
 4. Assess overall experience
 ```
 
-#### Step 3: Quality Assessment
+#### Step 3: Documentation Audit
+
+This is a REQUIRED step. The meta-test demonstrated that documentation falls out of sync with implementation and is never caught without an explicit audit.
+
+**Check the following:**
+- [ ] All user-facing docs match the shipped implementation (not a prior version)
+- [ ] No docs reference removed, renamed, or superseded concepts
+- [ ] If `/3-synthesis/naming-conventions.md` exists, verify all code follows its conventions
+- [ ] README or quickstart exists and is accurate (or flag its absence as MINOR)
+- [ ] Architecture docs match the final system (not an earlier design iteration)
+
+**Common documentation debt to catch:**
+- Docs describing V(N-1) when V(N) shipped
+- Architecture docs with wrong layer counts, folder names, or agent names
+- Template references to files that no longer exist
+- Command docs referencing old CLI flags or APIs
+
+| Issue | Severity |
+|-------|----------|
+| Stale doc that contradicts shipped code | MINOR |
+| Missing quickstart / no entry point for new users | MINOR |
+| Architecture doc describing a fundamentally different system | MAJOR |
+
+#### Step 4: Quality Assessment
 
 **Ask yourself: "Would I be proud to ship this?"**
 
@@ -92,7 +115,7 @@ Checklist:
 - [ ] No obvious security issues
 - [ ] Design is consistent
 
-#### Step 4: Scope Verification
+#### Step 5: Scope Verification
 
 Final check against original synthesis:
 - [ ] All JTBD are addressed
