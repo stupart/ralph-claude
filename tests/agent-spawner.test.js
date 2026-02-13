@@ -5,7 +5,7 @@
  * Run with: node tests/agent-spawner.test.js
  */
 
-const { AgentSpawner, AGENT_MODEL, AGENT_CONFIGS, LAYER_AGENTS, TOOL_PERMISSIONS, LAYER_CONTEXT } = require('../lib/agent-spawner');
+const { AgentSpawner, AGENT_MODEL, AGENT_CONFIGS, LAYER_AGENTS, TOOL_PERMISSIONS, LAYER_CONTEXT, normalizeAgentType } = require('../lib/agent-spawner');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -99,13 +99,14 @@ const tests = [
     assert(perms.forbidden.includes('Edit'), 'Planner should not have Edit');
   }),
 
-  test('Builder has all tools', async () => {
+  test('Builder has all implementation tools, /chrome forbidden', async () => {
     const spawner = new AgentSpawner(TEST_ROOT);
     const perms = spawner.getToolPermissions('builder');
     assert(perms.allowed.includes('Bash'), 'Builder should have Bash');
     assert(perms.allowed.includes('Edit'), 'Builder should have Edit');
     assert(perms.allowed.includes('Write'), 'Builder should have Write');
-    assert(perms.forbidden.length === 0, 'Builder should have no forbidden tools');
+    assert(perms.forbidden.includes('/chrome'), 'Builder should have /chrome forbidden');
+    assert(perms.forbidden.length === 1, 'Builder should only have /chrome forbidden');
   }),
 
   test('Judge has Read/Glob/Grep only', async () => {
@@ -230,6 +231,33 @@ const tests = [
     assert(spawner.matchesPattern('feature-1.md', 'feature-*.md') === true, 'Should match wildcard');
     assert(spawner.matchesPattern('task-1.md', 'feature-*.md') === false, 'Should not match different prefix');
     assert(spawner.matchesPattern('exact.md', 'exact.md') === true, 'Should match exact');
+  }),
+
+  // --- Agent type normalization ---
+  test('normalizeAgentType maps "reviewer" to "judge"', async () => {
+    assert(normalizeAgentType('reviewer') === 'judge', '"reviewer" should normalize to "judge"');
+    assert(normalizeAgentType('review') === 'judge', '"review" should normalize to "judge"');
+  }),
+
+  test('normalizeAgentType passes through canonical names', async () => {
+    assert(normalizeAgentType('planner') === 'planner', '"planner" should stay "planner"');
+    assert(normalizeAgentType('builder') === 'builder', '"builder" should stay "builder"');
+    assert(normalizeAgentType('judge') === 'judge', '"judge" should stay "judge"');
+  }),
+
+  test('getToolPermissions accepts "reviewer" alias', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const perms = spawner.getToolPermissions('reviewer');
+    assert(perms.allowed.includes('Read'), '"reviewer" should resolve to judge permissions with Read');
+    assert(perms.forbidden.includes('Write'), '"reviewer" should resolve to judge permissions with Write forbidden');
+  }),
+
+  test('validateToolUsage accepts "reviewer" alias', async () => {
+    const spawner = new AgentSpawner(TEST_ROOT);
+    const result = spawner.validateToolUsage('reviewer', 'Read');
+    assert(result.allowed === true, '"reviewer" should be allowed to Read (as judge)');
+    const result2 = spawner.validateToolUsage('reviewer', 'Write');
+    assert(result2.allowed === false, '"reviewer" should not be allowed to Write (as judge)');
   })
 ];
 
