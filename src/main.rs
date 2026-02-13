@@ -1,3 +1,16 @@
+//! DEPRECATED: This Rust CLI (src/) is no longer the active implementation.
+//! The Node.js orchestration layer in lib/ is the current, actively maintained
+//! implementation of Ralph. It provides a complete 12-layer pipeline with plugin
+//! support, cost tracking, stall detection, webhooks, and parallel execution.
+//!
+//! To use the active implementation:
+//!   const { Ralph } = require('./lib/ralph');
+//!   // See README.md "JS Orchestration" section for full usage guide.
+//!
+//! This file is preserved for reference only and may be removed in a future version.
+//!
+//! ---
+//! Original description:
 //! Ralph V3 - Layered Methodology for Autonomous Code Generation
 //!
 //! A CLI tool that orchestrates Claude Code through a 10-layer methodology:

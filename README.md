@@ -16,23 +16,21 @@ The key insight: **fresh context per iteration**, with state persisted to files 
 ## Prerequisites
 
 - **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)** — Anthropic's CLI for Claude (`claude` command)
-- **[Rust](https://rustup.rs/)** — for building ralph (`cargo`)
+- **[Node.js](https://nodejs.org/)** v18+ — for the JS orchestration layer
 - **Git** — for version control
 - **caffeinate** (macOS only, built-in) — for unattended runs
+
+> **Note:** The original Rust CLI (`cargo install --path .`) is deprecated.
+> The Node.js orchestration layer in `lib/` is the active implementation with
+> full plugin support, cost tracking, parallel execution, and more.
+> See the "JS Orchestration" section below for usage.
 
 ## Install
 
 ```bash
 git clone https://github.com/stupart/ralph-claude.git
 cd ralph-claude
-cargo install --path .
-```
-
-To update after pulling new changes:
-```bash
-cd ~/ralph-claude
-git pull
-cargo install --path . --force
+npx ralph status
 ```
 
 ## Quick Start
