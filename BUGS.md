@@ -1,9 +1,10 @@
 # Ralph V3 Bugs
 
-## BUG-001: Orchestrator allows chunk count mismatch between L4 outline and L5 specs
+## BUG-001: Orchestrator allows chunk count mismatch between L4 outline and L5 specs [FIXED gen2]
 
 **Severity:** MAJOR
 **Found:** 2026-01-30 during skill tree meta-test
+**Fixed:** gen2 - V3 Layer Cake replaces the Rust CLI orchestrator with a JS state machine (lib/state-machine.js) that validates layer advancement criteria. The chunk-based architecture was replaced with the epic/feature/task/subtask hierarchy, and the validator (lib/validator.js) enforces minimum counts at each level.
 **Component:** Rust CLI orchestrator (`src/main.rs`, `src/layers/criteria.rs`)
 
 **Description:**
@@ -35,10 +36,12 @@ The `validate_layer_advancement()` function exists but only validates L1-L4. Ext
 
 ---
 
-## BUG-003: Chrome tool connection issues stall Claude subprocess indefinitely
+## BUG-003: Chrome tool connection issues stall Claude subprocess indefinitely [MITIGATED gen2, FIXED gen3]
 
 **Severity:** MAJOR
 **Found:** 2026-01-30
+**Mitigated:** gen2 - Agent prompts updated to make /chrome optional with fallback to tests/code review.
+**Fixed:** gen3 - All judge prompts (L9, L10, L11) now include explicit fallback verification chain: browser automation -> automated tests -> curl/API -> code review. Prompts explicitly state "do NOT block on this step" if browser tools are unavailable.
 
 **Description:**
 When Claude attempts to use `/chrome` for testing (as instructed by L7 Chunk Review prompt) and the Chrome extension is unresponsive, the Claude process hangs indefinitely. Ralph has no timeout on the subprocess — it waits forever.
@@ -53,10 +56,11 @@ Ralph stalled for 5+ hours on a single iteration because Claude was stuck trying
 
 ---
 
-## BUG-004: L9 Final Review prompt mandates /chrome as step 1, causing repeated stalls
+## BUG-004: L9 Final Review prompt mandates /chrome as step 1, causing repeated stalls [FIXED gen3]
 
 **Severity:** MAJOR
 **Found:** 2026-01-30
+**Fixed:** gen3 - L9 Step 4 rewritten from "UX Review via /chrome" (mandatory) to "UX Review (Browser or Fallback)" with explicit priority chain: browser -> tests -> curl -> code review. L10 and L11 prompts similarly updated. Prompts now state: "If browser tools are unavailable or unresponsive, do NOT block on this step."
 
 **Description:**
 The L9 Final Review prompt (`src/prompts/`) says "Full walkthrough of all features via /chrome" as the first step in the review process. When Chrome extension is unavailable or unresponsive, Claude blocks on this step indefinitely. This happened twice during the meta-test — once stalling for 5+ hours (before disk space fix), and again immediately after restart.
