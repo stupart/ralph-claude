@@ -203,6 +203,172 @@ describe('Max retries escalation', () => {
   });
 });
 
+describe('Boundary: cascade to L1 (earliest layer)', () => {
+  test('ESCALATE from L3 cascades to L1 via default fallback', async () => {
+    const sm = await setStateAt('L3');
+    const router = new Router(sm);
+    const result = await router.route({
+      verdict: 'ITERATE',
+      issues: [{ title: 'Fundamental rethink', severity: 'ESCALATE' }]
+    });
+    expect(result.action).toBe('cascade');
+    expect(result.to).toBe('L1');
+  });
+
+  test('MAJOR from L2 cascades to L1 (cannot go below L1)', async () => {
+    const sm = await setStateAt('L2');
+    const router = new Router(sm);
+    const result = await router.route({
+      verdict: 'ITERATE',
+      issues: [{ title: 'Bad decomposition', severity: 'MAJOR' }]
+    });
+    expect(result.action).toBe('cascade');
+    expect(result.to).toBe('L1');
+  });
+
+  test('ESCALATE from L2 cascades to L1 (clamped at minimum)', async () => {
+    const sm = await setStateAt('L2');
+    const router = new Router(sm);
+    const result = await router.route({
+      verdict: 'ITERATE',
+      issues: [{ title: 'Wrong approach', severity: 'ESCALATE' }]
+    });
+    expect(result.action).toBe('cascade');
+    // L2 - 2 = L0, clamped to L1
+    expect(result.to).toBe('L1');
+  });
+});
+
+describe('Boundary: iteration count edge cases', () => {
+  test('very high iteration count still triggers escalation', async () => {
+    const sm = await setStateAt('L9', 1000);
+    const router = new Router(sm);
+    const result = await router.route({
+      verdict: 'ITERATE',
+      issues: [{ title: 'Stuck', severity: 'MINOR' }]
+    });
+    expect(result.escalated).toBe(true);
+  });
+
+  test('iteration count of 0 does not trigger escalation', async () => {
+    const sm = await setStateAt('L9', 0);
+    const router = new Router(sm);
+    const result = await router.route({
+      verdict: 'ITERATE',
+      issues: [{ title: 'Issue', severity: 'MINOR' }]
+    });
+    expect(result.escalated === undefined || result.escalated === false).toBe(true);
+  });
+});
+
+describe('Boundary: missing/malformed verdict', () => {
+  test('parseVerdict handles empty string verdict', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    // Empty string verdict should fall through to issue check
+    expect(router.parseVerdict({ verdict: '' })).toBe(VERDICT.PASS);
+  });
+
+  test('parseVerdict handles unknown verdict string', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    // 'UNKNOWN' doesn't contain PASS, ITERATE, or FAIL
+    expect(router.parseVerdict({ verdict: 'UNKNOWN' })).toBe(VERDICT.PASS);
+  });
+
+  test('parseVerdict handles case-insensitive verdict', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    expect(router.parseVerdict({ verdict: 'pass' })).toBe(VERDICT.PASS);
+    expect(router.parseVerdict({ verdict: 'Iterate' })).toBe(VERDICT.ITERATE);
+    expect(router.parseVerdict({ verdict: 'fail' })).toBe(VERDICT.ITERATE);
+  });
+
+  test('route with missing verdict and no issues defaults to PASS', async () => {
+    const sm = await setStateAt('L9');
+    const router = new Router(sm);
+    const result = await router.route({});
+    expect(result.action).toBe('advance');
+  });
+
+  test('route with undefined verdict but issues present routes as ITERATE', async () => {
+    const sm = await setStateAt('L9');
+    const router = new Router(sm);
+    const result = await router.route({
+      issues: [{ title: 'Bug found', severity: 'MINOR' }]
+    });
+    expect(result.action).toBe('cascade');
+    expect(result.to).toBe('L8');
+  });
+});
+
+describe('Boundary: null/undefined issues array', () => {
+  test('getHighestSeverity handles empty array', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    expect(router.getHighestSeverity([])).toBe(SEVERITY.MINOR);
+  });
+
+  test('getHighestSeverity handles issues with missing severity', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    // Issue without severity property should default to MINOR
+    expect(router.getHighestSeverity([{ title: 'No severity' }])).toBe(SEVERITY.MINOR);
+  });
+
+  test('getHighestSeverity handles issues with null severity', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    expect(router.getHighestSeverity([{ title: 'Null sev', severity: null }])).toBe(SEVERITY.MINOR);
+  });
+
+  test('route handles null issues array in reviewResult', async () => {
+    const sm = await setStateAt('L9');
+    const router = new Router(sm);
+    const result = await router.route({ verdict: 'ITERATE', issues: null });
+    // With null issues, getHighestSeverity gets [], defaults to MINOR
+    expect(result.action).toBe('cascade');
+    expect(result.to).toBe('L8');
+  });
+
+  test('route handles undefined issues in reviewResult', async () => {
+    const sm = await setStateAt('L9');
+    const router = new Router(sm);
+    const result = await router.route({ verdict: 'ITERATE' });
+    // undefined issues becomes [] via || [], routes as MINOR
+    expect(result.action).toBe('cascade');
+  });
+});
+
+describe('Boundary: parseReviewFile edge cases', () => {
+  test('parseReviewFile handles empty content', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    const result = router.parseReviewFile('');
+    expect(result.verdict).toBeNull();
+    expect(result.issues).toHaveLength(0);
+    expect(result.summary).toBe('');
+  });
+
+  test('parseReviewFile handles content with no verdict line', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    const content = '## Summary\nEverything looks good.\n';
+    const result = router.parseReviewFile(content);
+    expect(result.verdict).toBeNull();
+    expect(result.summary).toBe('Everything looks good.');
+  });
+
+  test('parseReviewFile handles PASS verdict with no issues', () => {
+    const sm = new StateManager(TEST_ROOT);
+    const router = new Router(sm);
+    const content = '## Verdict: PASS\n\n## Summary\nAll good.\n';
+    const result = router.parseReviewFile(content);
+    expect(result.verdict).toBe('PASS');
+    expect(result.issues).toHaveLength(0);
+  });
+});
+
 describe('parseReviewFile', () => {
   test('extracts verdict and issues', () => {
     const sm = new StateManager(TEST_ROOT);
