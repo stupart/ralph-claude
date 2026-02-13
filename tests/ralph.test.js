@@ -722,3 +722,99 @@ describe('Ralph cascade depth limit', () => {
     expect(errors[0].type).toBe('cascade_depth_exceeded');
   });
 });
+
+describe('Ralph gate timeout', () => {
+  test('default gateTimeout is 0 (no timeout)', () => {
+    const ralph = new Ralph(testDir, { verbose: false });
+    expect(ralph.options.gateTimeout).toBe(0);
+    expect(ralph.options.gateAutoApproveOnTimeout).toBe(false);
+  });
+
+  test('gate blocks normally when timeout not reached', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, gateTimeout: 60000 });
+    await ralph.initialize();
+
+    const state = await ralph.state.read();
+    state.position.layer = 'L3';
+    ralph.state.state = state;
+    await ralph.state.write();
+
+    const result = await ralph.runNextLayer();
+    expect(result.status).toBe('waiting_human');
+  });
+
+  test('gate returns gate_timeout status when timeout exceeded', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, gateTimeout: 1 });
+    await ralph.initialize();
+
+    const state = await ralph.state.read();
+    state.position.layer = 'L3';
+    ralph.state.state = state;
+    await ralph.state.write();
+
+    // Set wait start in the past
+    ralph._gateWaitStart.L3 = Date.now() - 100;
+
+    const result = await ralph.runNextLayer();
+    expect(result.status).toBe('gate_timeout');
+    expect(result.layerId).toBe('L3');
+    expect(result.message).toContain('timed out');
+  });
+
+  test('gate auto-approves on timeout with gateAutoApproveOnTimeout', async () => {
+    const ralph = new Ralph(testDir, {
+      verbose: false,
+      gateTimeout: 1,
+      gateAutoApproveOnTimeout: true
+    });
+    await ralph.initialize();
+
+    const state = await ralph.state.read();
+    state.position.layer = 'L3';
+    ralph.state.state = state;
+    await ralph.state.write();
+
+    // Set wait start in the past
+    ralph._gateWaitStart.L3 = Date.now() - 100;
+
+    const result = await ralph.runNextLayer();
+    // After auto-approval, should proceed to spawn
+    expect(result.status).toBe('spawn');
+    expect(result.layerId).toBe('L3');
+  });
+
+  test('fires onGateTimeout event', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, gateTimeout: 1 });
+    await ralph.initialize();
+
+    const events = [];
+    ralph.on('onGateTimeout', (data) => events.push(data));
+
+    const state = await ralph.state.read();
+    state.position.layer = 'L3';
+    ralph.state.state = state;
+    await ralph.state.write();
+
+    ralph._gateWaitStart.L3 = Date.now() - 100;
+    await ralph.runNextLayer();
+
+    expect(events).toHaveLength(1);
+    expect(events[0].layerId).toBe('L3');
+    expect(events[0].autoApproved).toBe(false);
+  });
+
+  test('gate wait start is tracked on first encounter', async () => {
+    const ralph = new Ralph(testDir, { verbose: false, gateTimeout: 60000 });
+    await ralph.initialize();
+
+    const state = await ralph.state.read();
+    state.position.layer = 'L3';
+    ralph.state.state = state;
+    await ralph.state.write();
+
+    expect(ralph._gateWaitStart.L3).toBeUndefined();
+    await ralph.runNextLayer();
+    expect(ralph._gateWaitStart.L3).toBeDefined();
+    expect(typeof ralph._gateWaitStart.L3).toBe('number');
+  });
+});
