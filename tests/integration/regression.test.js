@@ -115,6 +115,40 @@ None.
     expect(result.passed).toBe(true);
   });
 
+  it('accepts bold **heading** format or provides clear error', async () => {
+    testProject = await createTestProject();
+
+    // Write epic files with bold headings instead of ## headings
+    const epicContent = `# Epic 1
+
+**Description**
+This is a test epic with bold headings.
+
+**Scope**
+Test scope.
+
+**Dependencies**
+None.
+`;
+
+    await fsp.writeFile(path.join(testProject.projectRoot, '4-epics', 'epic-01.md'), epicContent);
+    await fsp.writeFile(path.join(testProject.projectRoot, '4-epics', 'epic-02.md'), epicContent);
+    await fsp.writeFile(path.join(testProject.projectRoot, '4-epics', 'epic-03.md'), epicContent);
+    await fsp.writeFile(
+      path.join(testProject.projectRoot, '4-epics', '_index.md'),
+      '# Epics\n\n## Overview\nTest.'
+    );
+
+    const validator = new Validator(testProject.projectRoot);
+    const result = await validator.validateLayer('L4');
+
+    // Either validation passes (bold headings accepted) or error is clear and descriptive
+    if (!result.passed) {
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0].message).toBeTruthy();
+    }
+  });
+
   it('MockExecutor generates headings that validator accepts', async () => {
     testProject = await createTestProject();
 

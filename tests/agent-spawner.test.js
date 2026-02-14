@@ -238,7 +238,7 @@ describe('Spawn config', () => {
     expect(config.agentType).toBe('planner');
     expect(config.model).toBe(AGENT_MODEL);
     expect(config.layerId).toBe('L4');
-    expect(config.permissions).toBeDefined();
+    expect(config.toolPermissions).toBeDefined();
     expect(config.context).toBeDefined();
     expect(config.timestamp).toBeDefined();
   });

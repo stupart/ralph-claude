@@ -374,7 +374,7 @@ describe('Ralph', () => {
     expect(result.spawnConfig).toBeDefined();
     expect(result.spawnConfig.agentType).toBe('planner');
     expect(result.spawnConfig.prompt).toBeDefined();
-    expect(result.spawnConfig.permissions).toBeDefined();
+    expect(result.spawnConfig.toolPermissions).toBeDefined();
     expect(result.spawnConfig.context).toBeDefined();
     expect(executorCalled).toBe(false);
   });
