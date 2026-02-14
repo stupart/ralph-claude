@@ -146,6 +146,11 @@ Commands:
   status     Show current project state and progress
   resume     Recover from crash or interrupted state
   cost       Show token usage and cost estimates
+  prompts    Prompt Lab tools
+    list                List all templates with metadata (default)
+    edit <identifier>   Edit a template with live preview
+    test <id> --variants <list> [--real]  Run A/B test
+    report [--last N]   Show metrics comparison table
 
 Options:
   --dir <path>       Project directory (default: current directory)
@@ -392,6 +397,118 @@ async function cmdCost(options) {
   }
 }
 
+// Prompt Lab commands
+
+async function cmdPrompts() {
+  const subcommand = process.argv[3] || 'list';
+
+  switch (subcommand) {
+    case 'list':
+      await handlePromptsList();
+      break;
+    case 'edit':
+      await handlePromptsEdit();
+      break;
+    case 'test':
+      await handlePromptsTest();
+      break;
+    case 'report':
+      await handlePromptsReport();
+      break;
+    default:
+      console.log('Unknown subcommand: ' + subcommand);
+      console.log('Valid subcommands: list, edit, test, report');
+      console.log('Usage: ralph prompts [list|edit|test|report]');
+      break;
+  }
+}
+
+async function handlePromptsList() {
+  const { PromptRegistry } = require('../lib/prompt-registry');
+  const registry = new PromptRegistry();
+  const entries = await registry.scan();
+
+  if (entries.length === 0) {
+    console.log('No templates found.');
+    return;
+  }
+
+  const header = 'Template'.padEnd(35) + 'Type'.padEnd(10) +
+    'Layers'.padEnd(15) + 'Vars'.padEnd(6) + 'Chars'.padEnd(8) +
+    'Tokens'.padEnd(8) + 'Modified'.padEnd(12);
+  console.log(header);
+  console.log('-'.repeat(header.length));
+
+  for (const e of entries) {
+    console.log(
+      e.filename.padEnd(35) +
+      e.agentType.padEnd(10) +
+      (e.layerMapping.join(',') || '-').padEnd(15) +
+      String(e.templateVariables.length).padEnd(6) +
+      String(e.charCount).padEnd(8) +
+      String(e.estimatedTokens).padEnd(8) +
+      e.lastModified.toISOString().split('T')[0].padEnd(12)
+    );
+  }
+}
+
+async function handlePromptsEdit() {
+  const identifier = process.argv[4];
+  if (!identifier) {
+    console.error('Usage: ralph prompts edit <identifier>');
+    console.error('Example: ralph prompts edit L8-builder');
+    return;
+  }
+  const { PromptEditor } = require('../lib/prompt-editor');
+  const editor = new PromptEditor(process.cwd());
+  await editor.edit(identifier);
+}
+
+async function handlePromptsTest() {
+  const identifier = process.argv[4];
+  if (!identifier) {
+    console.error('Usage: ralph prompts test <identifier> --variants <list> [--real]');
+    return;
+  }
+
+  const variantsIdx = process.argv.indexOf('--variants');
+  if (variantsIdx === -1 || !process.argv[variantsIdx + 1]) {
+    console.error('Error: --variants is required. Example: --variants original,vivid');
+    return;
+  }
+
+  const variants = process.argv[variantsIdx + 1].split(',').filter(Boolean);
+  if (variants.length === 0) {
+    console.error('Error: --variants must list at least one variant name.');
+    return;
+  }
+
+  const real = process.argv.includes('--real');
+
+  const { PromptTester } = require('../lib/prompt-tester');
+  const tester = new PromptTester(process.cwd());
+  const result = await tester.test(identifier, variants, { real });
+  console.log(`Test complete. Results stored in _prompt-tests/${result.filename}`);
+}
+
+async function handlePromptsReport() {
+  const options = {};
+  const lastIdx = process.argv.indexOf('--last');
+  if (lastIdx !== -1 && process.argv[lastIdx + 1]) {
+    const n = parseInt(process.argv[lastIdx + 1], 10);
+    if (n > 0) options.last = n;
+  }
+
+  const { PromptMetrics } = require('../lib/prompt-metrics');
+  const metrics = new PromptMetrics(process.cwd());
+  const report = await metrics.report(options);
+  if (report.formatted) {
+    console.log(report.formatted);
+  } else if (report.message) {
+    console.log(report.message);
+  }
+}
+
 // Main entry point
 async function main() {
   const { command, options } = parseArgs(process.argv);
@@ -412,6 +529,9 @@ async function main() {
     case 'cost':
       await cmdCost(options);
       break;
+    case 'prompts':
+      await cmdPrompts(options);
+      break;
     case 'help':
     default:
       await cmdHelp();
@@ -428,7 +548,7 @@ function setColorEnabled(enabled) {
 }
 
 // Export for testing
-module.exports = { parseArgs, cmdInit, cmdStatus, cmdResume, cmdCost, formatLayerLine, COLORS, color, setColorEnabled };
+module.exports = { parseArgs, cmdInit, cmdStatus, cmdResume, cmdCost, cmdPrompts, formatLayerLine, COLORS, color, setColorEnabled };
 
 // Run if executed directly
 if (require.main === module) {
