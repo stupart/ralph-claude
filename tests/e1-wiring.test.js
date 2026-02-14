@@ -19,9 +19,11 @@ beforeEach(async () => {
   // Copy templates to test dir
   const templatesDir = path.join(testDir, 'templates', 'agents');
   await fs.mkdir(templatesDir, { recursive: true });
-  const templateFiles = await fs.readdir(TEMPLATES_PATH);
-  for (const f of templateFiles) {
-    await fs.copyFile(path.join(TEMPLATES_PATH, f), path.join(templatesDir, f));
+  const templateEntries = await fs.readdir(TEMPLATES_PATH, { withFileTypes: true });
+  for (const entry of templateEntries) {
+    if (entry.isFile()) {
+      await fs.copyFile(path.join(TEMPLATES_PATH, entry.name), path.join(templatesDir, entry.name));
+    }
   }
 });
 
