@@ -120,8 +120,9 @@ describe('Ralph', () => {
     expect(result.spawnConfig.agentType).toBe('planner');
   });
 
-  test('runNextLayer blocks at human gate L3', async () => {
-    const ralph = new Ralph(testDir, { verbose: false });
+  test('runNextLayer blocks at human gate L3 with gateTimeout', async () => {
+    // With gateTimeout set, gates return waiting_human until timeout expires
+    const ralph = new Ralph(testDir, { verbose: false, gateTimeout: 60000 });
     await ralph.initialize();
 
     // Advance state to L3
@@ -132,6 +133,22 @@ describe('Ralph', () => {
 
     const result = await ralph.runNextLayer();
     expect(result.status).toBe('waiting_human');
+  });
+
+  test('runNextLayer auto-approves gate in non-TTY mode', async () => {
+    // Without gateTimeout, non-TTY stdin auto-approves (E2 interactive gate behavior)
+    const ralph = new Ralph(testDir, { verbose: false });
+    await ralph.initialize();
+
+    // Advance state to L3
+    const state = await ralph.state.read();
+    state.position.layer = 'L3';
+    ralph.state.state = state;
+    await ralph.state.write();
+
+    const result = await ralph.runNextLayer();
+    // Non-TTY auto-approves and proceeds to spawn
+    expect(result.status).toBe('spawn');
   });
 
   test('runNextLayer proceeds after gate approval', async () => {

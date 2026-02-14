@@ -267,9 +267,11 @@ describe('E2E: Full Layer Cake Pipeline', () => {
     expect(transitions[6]).toMatchObject({ from: 'L7', to: 'L8' });
   });
 
-  test('human gate blocks without autoApprove', async () => {
+  test('human gate blocks with gateTimeout', async () => {
+    // With gateTimeout, gates return waiting_human until timeout expires
     const gatedRalph = new Ralph(projectDir, {
       autoApproveGates: false,
+      gateTimeout: 60000,
       verbose: false,
       agentTimeout: 0,
       eventLog: false,
@@ -284,7 +286,7 @@ describe('E2E: Full Layer Cake Pipeline', () => {
     await createLayerArtifacts(projectDir, 'L2');
     await gatedRalph.runLayerCycle(jest.fn().mockResolvedValue({}));
 
-    // L3 should block on human gate
+    // L3 should block on human gate (with gateTimeout, returns waiting_human)
     await createLayerArtifacts(projectDir, 'L3');
     const gateResult = await gatedRalph.runNextLayer();
     expect(gateResult.status).toBe('waiting_human');
@@ -298,6 +300,31 @@ describe('E2E: Full Layer Cake Pipeline', () => {
     expect(result.status).toBe('advanced');
     expect(result.from).toBe('L3');
     expect(result.to).toBe('L4');
+  });
+
+  test('human gate auto-approves in non-TTY without gateTimeout', async () => {
+    // Without gateTimeout, non-TTY stdin auto-approves (E2 interactive behavior)
+    const gatedRalph = new Ralph(projectDir, {
+      autoApproveGates: false,
+      verbose: false,
+      agentTimeout: 0,
+      eventLog: false,
+      notifications: false
+    });
+
+    await gatedRalph.initialize();
+
+    // Advance to L3
+    await createLayerArtifacts(projectDir, 'L1');
+    await gatedRalph.runLayerCycle(jest.fn().mockResolvedValue({}));
+    await createLayerArtifacts(projectDir, 'L2');
+    await gatedRalph.runLayerCycle(jest.fn().mockResolvedValue({}));
+
+    // L3 should auto-approve in non-TTY mode and proceed to spawn
+    await createLayerArtifacts(projectDir, 'L3');
+    const gateResult = await gatedRalph.runNextLayer();
+    expect(gateResult.status).toBe('spawn');
+    expect(gateResult.layerId).toBe('L3');
   });
 
   test('review layer with PASS advances forward', async () => {
