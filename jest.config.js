@@ -1,5 +1,5 @@
 module.exports = {
-  testMatch: ['**/tests/*.test.js'],
+  testMatch: ['**/tests/*.test.js', '**/tests/integration/*.test.js'],
   testEnvironment: 'node',
   testTimeout: 10000,
   collectCoverageFrom: [
