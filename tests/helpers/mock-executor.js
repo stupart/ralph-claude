@@ -13,11 +13,13 @@ const { generatePlannerArtifact, generateBuilderArtifact, generateJudgeArtifact 
 class MockExecutor {
   /**
    * @param {Object} options
+   * @param {string} [options.projectRoot] - Project root for artifact generation (injected as workingDir)
    * @param {Object} [options.verdictOverrides] - Static or function-based verdict overrides per layer
    * @param {Object} [options.timingOverrides] - Timing delays per layer { [layerId]: { delayMs, preWrite } }
    * @param {Array} [options.callLog] - Array to track execution calls (shared reference)
    */
   constructor(options = {}) {
+    this.projectRoot = options.projectRoot || null;
     this.verdictOverrides = options.verdictOverrides || {};
     this.timingOverrides = options.timingOverrides || {};
     this.callLog = options.callLog || [];
@@ -71,8 +73,14 @@ class MockExecutor {
     const agentType = LAYER_AGENTS[layerId];
     const generator = this._getGenerator(agentType);
 
+    // Ensure workingDir is set (may not be in spawnConfig from AgentSpawner)
+    const effectiveConfig = { ...spawnConfig };
+    if (!effectiveConfig.workingDir && this.projectRoot) {
+      effectiveConfig.workingDir = this.projectRoot;
+    }
+
     // Pass executor context (this) to generator
-    return await generator(layerId, spawnConfig, options, this);
+    return await generator(layerId, effectiveConfig, options, this);
   }
 
   /**

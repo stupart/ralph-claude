@@ -105,6 +105,17 @@ This is a test brain dump for integration testing.
     ''
   );
 
+  // Symlink templates directory from the real project so AgentSpawner can find prompts
+  const realProjectRoot = path.resolve(__dirname, '..', '..');
+  const templatesSource = path.join(realProjectRoot, 'templates');
+  const templatesTarget = path.join(projectRoot, 'templates');
+  try {
+    await fs.symlink(templatesSource, templatesTarget, 'dir');
+  } catch {
+    // Symlink may fail on some systems; copy instead is not needed for tests
+    // as templates are only needed for full integration tests
+  }
+
   const cleanup = async () => {
     await fs.rm(projectRoot, { recursive: true, force: true });
   };
