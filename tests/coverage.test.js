@@ -27,19 +27,19 @@ describe('Jest coverage configuration', () => {
   });
 
   test('coverage thresholds require >= 80% lines', () => {
-    expect(jestConfig.coverageThresholds).toBeDefined();
-    expect(jestConfig.coverageThresholds.global.lines).toBeGreaterThanOrEqual(80);
+    expect(jestConfig.coverageThreshold).toBeDefined();
+    expect(jestConfig.coverageThreshold.global.lines).toBeGreaterThanOrEqual(80);
   });
 
   test('coverage thresholds require >= 80% statements', () => {
-    expect(jestConfig.coverageThresholds.global.statements).toBeGreaterThanOrEqual(80);
+    expect(jestConfig.coverageThreshold.global.statements).toBeGreaterThanOrEqual(80);
   });
 
   test('coverage thresholds require >= 80% functions', () => {
-    expect(jestConfig.coverageThresholds.global.functions).toBeGreaterThanOrEqual(80);
+    expect(jestConfig.coverageThreshold.global.functions).toBeGreaterThanOrEqual(80);
   });
 
   test('coverage thresholds require >= 60% branches', () => {
-    expect(jestConfig.coverageThresholds.global.branches).toBeGreaterThanOrEqual(60);
+    expect(jestConfig.coverageThreshold.global.branches).toBeGreaterThanOrEqual(60);
   });
 });

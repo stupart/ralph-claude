@@ -21,79 +21,39 @@ exports[`Context structure snapshots LAYER_CONTEXT configuration matches snapsho
 {
   "L1": {
     "description": "Gather inputs from brain dumps and existing documentation",
-    "load": [],
   },
   "L10": {
     "description": "Review epic integration",
-    "load": [
-      "4-epics/epics.md",
-      "5-features/{{epic}}/*",
-    ],
   },
   "L11": {
     "description": "Final review of entire project",
-    "load": [
-      "3-synthesis/*",
-      "4-epics/*",
-    ],
   },
   "L12": {
     "description": "Retrospective and learnings",
-    "load": [
-      "*-*/*",
-    ],
   },
   "L2": {
     "description": "Decompose inputs into patterns, quotes, and affinities",
-    "load": [
-      "1-input/*",
-    ],
   },
   "L3": {
     "description": "Synthesize decomposition into JTBD, journeys, and architecture",
-    "load": [
-      "1-input/*",
-      "2-decomposition/*",
-    ],
   },
   "L4": {
     "description": "Define epics based on synthesis",
-    "load": [
-      "3-synthesis/*",
-    ],
   },
   "L5": {
     "description": "Plan features for each epic",
-    "load": [
-      "3-synthesis/*",
-      "4-epics/*",
-    ],
   },
   "L6": {
     "description": "Specify tasks for each feature",
-    "load": [
-      "5-features/{{epic}}/*",
-    ],
   },
   "L7": {
     "description": "Define subtasks for each task",
-    "load": [
-      "5-features/{{epic}}/{{feature}}.md",
-      "6-tasks/{{epic}}/{{feature}}/*",
-    ],
   },
   "L8": {
     "description": "Implement subtasks",
-    "load": [
-      "7-subtasks/{{epic}}/{{feature}}/{{task}}.md",
-    ],
   },
   "L9": {
     "description": "Review completed feature",
-    "load": [
-      "5-features/{{epic}}/{{feature}}.md",
-      "7-subtasks/{{epic}}/{{feature}}/*",
-    ],
   },
 }
 `;

@@ -2,6 +2,27 @@
 
 All notable changes to the Ralph Layer Cake Orchestrator, documented by generation.
 
+## [Layer Cake v3] - 2026-02-13
+
+Integration test framework, mock executor, and human gate UX.
+
+### Added
+- MockExecutor (`tests/helpers/mock-executor.js`) implementing the `agentExecutor` callback interface for deterministic, free testing
+- Integration test scaffold (`tests/integration/`) with happy-path, cascade, timeout, stress, regression, and validator edge case tests
+- Gate summarizer (`lib/gate-summarizer.js`) for summarizing pipeline artifacts at human gate layers (L4, L7, L11)
+- Gate prompt (`lib/gate-prompt.js`) for interactive approval prompts with feedback capture
+- Feedback routing in AgentSpawner for passing human gate feedback into replanning context
+
+## [Layer Cake v2] - 2026-02-13
+
+Agent executor, verdict parsing, context resolution, and orchestrator wiring.
+
+### Added
+- ClaudeExecutor (`lib/claude-executor.js`) for spawning Claude agents via `claude -p` subprocess with timeout and kill enforcement
+- VerdictParser (`lib/verdict-parser.js`) for extracting structured PASS/ITERATE verdicts from judge output
+- Context Resolver in AgentSpawner (`lib/agent-spawner.js`) for resolving LAYER_DEPS glob patterns to file contents with 40% token budget management
+- Orchestrator integration in Ralph (`lib/ralph.js`) wiring executor, parser, and spawner into the pipeline loop
+
 ## [Gen 10] - 2026-02-13
 
 Plugin architecture, TypeScript types, and v1.0 readiness polish.

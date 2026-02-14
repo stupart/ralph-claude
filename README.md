@@ -346,7 +346,7 @@ npx jest --config jest.config.js --forceExit
 npx jest --config jest.config.js --coverage --forceExit  # with coverage report
 ```
 
-Runs 328 tests across 18 suites covering all orchestration modules (87% line coverage).
+Runs 862 tests across 39 suites covering all orchestration modules.
 
 ---
 
