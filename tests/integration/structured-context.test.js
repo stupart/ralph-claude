@@ -179,4 +179,54 @@ identified above. The test suite runs in approximately 32 seconds.
     // Verify structured output is ≤20% of raw review size
     expect(structuredOutput.length).toBeLessThanOrEqual(rawReview.length * 0.2);
   });
+
+  describe('Iteration counter', () => {
+    it('shows iteration 2 of 3 with issues', () => {
+      const issues = [
+        { severity: 'MINOR', title: 'Test gap', description: 'Missing edge case test' }
+      ];
+      const result = spawner.buildStructuredIterationContext(issues, 2, 3);
+      expect(result).toContain('This is iteration 2 of 3 (max).');
+      expect(result).toContain('## Prior Iteration Issues (Verify Fixed)');
+
+      // Verify ordering
+      const counterIdx = result.indexOf('## Review Iteration');
+      const issuesIdx = result.indexOf('## Prior Iteration Issues');
+      expect(counterIdx).toBeLessThan(issuesIdx);
+    });
+
+    it('shows iteration 1 with no issues (counter only)', () => {
+      const result = spawner.buildStructuredIterationContext([], 1, 3);
+      expect(result).toContain('This is iteration 1 of 3 (max).');
+      expect(result).not.toContain('## Prior Iteration Issues');
+    });
+
+    it('defaults maxIterations to 3 when undefined', () => {
+      const result = spawner.buildStructuredIterationContext([], 1, undefined);
+      expect(result).toContain('This is iteration 1 of 3 (max).');
+    });
+  });
+
+  describe('Final-iteration framing', () => {
+    it('includes FINAL framing on iteration 3 of 3', () => {
+      const issues = [
+        { severity: 'MINOR', title: 'Issue', description: 'desc' }
+      ];
+      const result = spawner.buildStructuredIterationContext(issues, 3, 3);
+      expect(result).toContain('This is iteration 3 of 3 (max).');
+      expect(result).toContain('FINAL iteration');
+      expect(result).toContain('focus exclusively on verifying prior findings were addressed');
+    });
+
+    it('treats maxIterations=1 as both first and final', () => {
+      const result = spawner.buildStructuredIterationContext([], 1, 1);
+      expect(result).toContain('This is iteration 1 of 1 (max).');
+      expect(result).toContain('FINAL iteration');
+    });
+
+    it('does NOT include FINAL framing on non-final iteration', () => {
+      const result = spawner.buildStructuredIterationContext([], 1, 3);
+      expect(result).not.toContain('FINAL');
+    });
+  });
 });
