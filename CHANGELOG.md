@@ -2,6 +2,50 @@
 
 All notable changes to the Ralph Layer Cake Orchestrator, documented by generation.
 
+## [Layer Cake v5] - 2026-02-14
+
+Self-improvement bootstrap, pipeline introspection, and code hygiene.
+
+### Added
+
+- **Generation Tracker** (`lib/generation-tracker.js`) — Cross-generation history extraction: discovers past `_layer-cake-v{N}/` directories, parses epic statuses, computes issue ledger with recurrence tracking
+- **Convergence Detector** (`lib/convergence-detector.js`) — Trend analysis for pipeline improvement measurement: computes per-metric trends, detects plateaus/regressions, produces composite convergence score
+- **Brain Dump Generator** (`lib/brain-dump-generator.js`) — Auto-generated brain dumps for next-generation pipeline input: prioritizes epics by deferral history, surfaces recurring issues, generates constraints
+- **Execution Analyzer** (`lib/execution-analyzer.js`) — Streaming JSONL parser for pipeline execution diagnostics: per-layer timing, retry speedup ratio, context exhaustion detection, timeout waste computation
+- **Runner Health Check** (`tests/runner-health-check.test.js`) — Static analysis tests preventing runner API regressions: verifies `runProject()` usage, detects `runLayerCycle` anti-patterns, validates timeout config
+- **Epic Registry** (`docs/epic-registry.md`) — Cross-generation epic tracking with deferral history: records planned/built/deferred status for all epics across v2-v5
+- **Architecture Documentation** (`ARCHITECTURE.md`) — Project-level architecture doc covering all pipeline components with purposes, responsibilities, and interfaces
+
+### Changed
+
+- **L12 Execution Review Enhancement** (`lib/agent-spawner.js`, `templates/agents/planner-L12-retrospective.md`) — Execution report injection into L12 retrospective context with conditional formatting and root-cause analysis instructions
+
+### Fixed
+
+- **Epic registry synchronized** (`docs/epic-registry.md`) — Updated planned/built statuses for v3 (gate-summarizer, gate-prompt) and v4 (prompt-registry, prompt-editor, prompt-tester, prompt-metrics) epics; added deferral history tracking column
+- **Gitignore updated** (`.gitignore`) — Added `_layer-cake-v*/`, `coverage/`, `node_modules/` entries to prevent generation artifacts from appearing in git status
+- **Architecture documentation created** (`ARCHITECTURE.md`) — Added v3 (gate-summarizer, gate-prompt) and v4 (prompt-registry, prompt-editor, prompt-tester, prompt-metrics) module documentation with purposes, responsibilities, and interfaces
+
+## [Layer Cake v4] - 2026-02-14
+
+Prompt Lab subsystem and partial code hygiene.
+
+### Added
+
+- **Prompt Registry** (`lib/prompt-registry.js`) — Template scanning, metadata extraction, variant tracking, filtering, and diff generation for agent prompt templates
+- **Prompt Editor** (`lib/prompt-editor.js`) — Live prompt editing with `$EDITOR` invocation, template resolution via registry, and rendered preview
+- **Prompt Tester** (`lib/prompt-tester.js`) — A/B testing of prompt variants: spawn config building, variant execution, output comparison, result storage
+- **Prompt Metrics** (`lib/prompt-metrics.js`) — Quality and performance metrics across prompt variants: loading, filtering, scoring, aggregation, formatted reports
+- **Vivid Variants** (`templates/agents/variants/`) — Distinctive prompt variants: judge as structural engineer, builder as jq/ripgrep craftsperson, planner as strategic architect
+- **CLI Prompts Command** (`bin/ralph-cli.js`) — `ralph prompts` command with subcommand routing for registry, editor, tester, and metrics
+
+### Fixed
+
+- README module counts synchronized with actual codebase
+- Jest config typo fix
+- Dead code removal (`load` arrays in agent-spawner)
+- CHANGELOG entries added (this section)
+
 ## [Layer Cake v3] - 2026-02-13
 
 Integration test framework, mock executor, and human gate UX.
