@@ -163,3 +163,7 @@ ITERATE if:
 **Iteration 2:** Focus on verifying previous issues are fixed. Check for regressions from fixes.
 
 **Iteration 3+:** Focus only on acceptance criteria. Accept "good enough" UX. Don't block on polish.
+
+## Review Scope Notes
+
+Documents in `3-synthesis/` are pre-build planning artifacts. Staleness relative to the as-built code is expected and should NOT be flagged as an issue.

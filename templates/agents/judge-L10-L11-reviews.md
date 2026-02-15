@@ -171,3 +171,7 @@ Blocking Issues: {list}
 Cascade: Return to L{X}
 Required Fixes: {specific items}
 ```
+
+## Review Scope Notes
+
+Documents in `3-synthesis/` are pre-build planning artifacts. Staleness relative to the as-built code is expected and should NOT be flagged as an issue.
