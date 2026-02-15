@@ -17,10 +17,15 @@ const { Ralph } = require('../lib/ralph');
 const { VerdictParser } = require('../lib/verdict-parser');
 
 // Project directory for the meta-improvement
-const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v6');
+const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v7');
 // The actual codebase the builder will modify
 const CODEBASE_ROOT = path.join(__dirname, '..');
 const verdictParser = new VerdictParser();
+
+let _isShuttingDown = false;
+let _currentExecutor = null;
+let _currentLayerId = null;
+let _currentEpicId = null;
 
 /**
  * Parse CLI arguments
@@ -355,6 +360,24 @@ async function main() {
 
   // Create the agent executor
   const agentExecutor = createAgentExecutor(opts);
+  _currentExecutor = agentExecutor; // Capture for signal handler
+
+  // Track current layer/epic for signal handler context
+  ralph.on('onAgentSpawn', (spawnConfig) => {
+    _currentLayerId = spawnConfig.layerId || null;
+    _currentEpicId = spawnConfig.context?.position?.epic || null;
+  });
+
+  async function handleShutdown(signal) {
+    if (_isShuttingDown) return;
+    _isShuttingDown = true;
+    console.error(`\nReceived ${signal}. Shutting down gracefully...`);
+    // Shutdown sequence implemented in F1-T2
+    process.exit(0);
+  }
+
+  process.on('SIGINT', handleShutdown);
+  process.on('SIGTERM', handleShutdown);
 
   // Run the full pipeline using runProject() which handles:
   // - Per-epic build cycling at L8 (one epic at a time, L9 review per epic)
