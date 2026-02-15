@@ -21,12 +21,22 @@ describe('buildStructuredIterationContext()', () => {
     expect(result).toContain('3. [MINOR] Typo in error message');
   });
 
-  it('returns empty string for empty array', () => {
-    expect(spawner.buildStructuredIterationContext([], 1, 3)).toBe('');
+  it('returns iteration counter only for empty array with iterationNumber', () => {
+    const result = spawner.buildStructuredIterationContext([], 1, 3);
+    expect(result).toContain('## Review Iteration');
+    expect(result).not.toContain('## Prior Iteration Issues');
   });
 
-  it('returns empty string for null input', () => {
-    expect(spawner.buildStructuredIterationContext(null, 1, 3)).toBe('');
+  it('returns iteration counter only for null input with iterationNumber', () => {
+    const result = spawner.buildStructuredIterationContext(null, 1, 3);
+    expect(result).toContain('## Review Iteration');
+    expect(result).not.toContain('## Prior Iteration Issues');
+  });
+
+  it('returns empty string for empty issues and no iterationNumber', () => {
+    expect(spawner.buildStructuredIterationContext([], null, 3)).toBe('');
+    expect(spawner.buildStructuredIterationContext(null, null, 3)).toBe('');
+    expect(spawner.buildStructuredIterationContext([], undefined, 3)).toBe('');
   });
 
   it('preserves file references in descriptions', () => {
