@@ -280,4 +280,65 @@ Verdict: PASS`;
       expect(result.verdict).toBe('PASS');
     });
   });
+
+  describe('Severity Marker Scanning', () => {
+    it('no verdict + MAJOR issues → ITERATE with MAJOR issues preserved', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('Some review text\n- [MAJOR] Bug: Memory leak found');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.issues.some(i => i.severity === 'MAJOR' && i.title === 'Bug')).toBe(true);
+      warnSpy.mockRestore();
+    });
+
+    it('no verdict + ESCALATE issues → ITERATE with ESCALATE issues preserved', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('Review notes\n- [ESCALATE] Architecture: Needs redesign');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.issues.some(i => i.severity === 'ESCALATE')).toBe(true);
+      warnSpy.mockRestore();
+    });
+
+    it('PASS + MAJOR issues → ITERATE with "Verdict overridden" synthetic issue', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('## Verdict: PASS\n- [MAJOR] Security: SQL injection');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.issues.find(i => i.title === 'Verdict overridden')).toBeDefined();
+      warnSpy.mockRestore();
+    });
+
+    it('PASS + ESCALATE issues → ITERATE with "Verdict overridden" synthetic issue', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('## Verdict: PASS\n- [ESCALATE] Critical: Data loss');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.issues.find(i => i.title === 'Verdict overridden')).toBeDefined();
+      warnSpy.mockRestore();
+    });
+
+    it('PASS + only MINOR issues → PASS (no override)', () => {
+      const result = parser.parse('## Verdict: PASS\n- [MINOR] Style: Use camelCase');
+      expect(result.verdict).toBe('PASS');
+      expect(result.issues.find(i => i.title === 'Verdict overridden')).toBeUndefined();
+    });
+
+    it('ITERATE + MAJOR issues → ITERATE (no override needed, no synthetic issue)', () => {
+      const result = parser.parse('## Verdict: ITERATE\n- [MAJOR] Bug: Memory leak');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.issues.find(i => i.title === 'Verdict overridden')).toBeUndefined();
+    });
+
+    it('mixed MINOR + MAJOR with PASS → ITERATE (any high-severity triggers override)', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('## Verdict: PASS\n- [MINOR] Style: Naming\n- [MAJOR] Bug: Null pointer');
+      expect(result.verdict).toBe('ITERATE');
+      warnSpy.mockRestore();
+    });
+
+    it('empty output → ITERATE with "Unparseable verdict" (existing behavior preserved)', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.issues[0].title).toBe('Unparseable verdict');
+      warnSpy.mockRestore();
+    });
+  });
 });
