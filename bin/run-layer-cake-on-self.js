@@ -68,6 +68,60 @@ function parseArgs() {
 }
 
 /**
+ * Detect if the project was previously interrupted.
+ * Checks _events.jsonl (last event) and _status.md for interrupted state.
+ * @param {string} projectDir - Path to the project directory
+ * @returns {{ interrupted: boolean, layer: string|null, epic: string|null, source: string }|null}
+ */
+function detectInterruptedState(projectDir) {
+  let eventResult = null;
+  let statusResult = null;
+
+  // Check _events.jsonl
+  try {
+    const eventsPath = path.join(projectDir, '_events.jsonl');
+    const content = fsSync.readFileSync(eventsPath, 'utf8');
+    const lines = content.trim().split('\n').filter(l => l.trim());
+    if (lines.length > 0) {
+      const lastEvent = JSON.parse(lines[lines.length - 1]);
+      if (lastEvent.type === 'pipeline_interrupted') {
+        eventResult = {
+          interrupted: true,
+          layer: lastEvent.layer || null,
+          epic: lastEvent.epic || null,
+          source: 'events'
+        };
+      }
+    }
+  } catch (e) {
+    // Missing file or corrupted JSON — fall through to status check
+  }
+
+  // Check _status.md
+  try {
+    const statusPath = path.join(projectDir, '_status.md');
+    const content = fsSync.readFileSync(statusPath, 'utf8');
+    if (content.includes('status: interrupted')) {
+      const layerMatch = content.match(/layer:\s*(\S+)/);
+      const epicMatch = content.match(/epic:\s*(\S+)/);
+      statusResult = {
+        interrupted: true,
+        layer: layerMatch?.[1] || null,
+        epic: epicMatch?.[1] || null,
+        source: 'status'
+      };
+    }
+  } catch (e) {
+    // Missing file — no status check possible
+  }
+
+  // Conservative: either source triggers resume
+  if (eventResult) return eventResult;
+  if (statusResult) return statusResult;
+  return null;
+}
+
+/**
  * Resolve context glob patterns to actual file contents.
  * Takes the spawnConfig.context.files patterns and reads matching files.
  */
