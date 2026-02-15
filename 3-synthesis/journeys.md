@@ -81,7 +81,7 @@
 
 | Step | Action | Touchpoint | Emotion | Pain Point | Opportunity |
 |------|--------|------------|---------|------------|-------------|
-| 1 | Operator notices README claims stale test count (was "862 across 39", now corrected to 1054 across 50) | README.md line 349 | Mildly annoyed — this had been wrong for 3 generations | PP5: Stale count persisted despite L11 flagging it | Automated extraction from `npm test --json` |
+| 1 | Operator notices README claims stale test count (now corrected to 1054 across 50) | README.md line 349 | Mildly annoyed — this had been wrong for 3 generations | PP5: Stale count persisted despite L11 flagging it | Automated extraction from `npm test --json` |
 | 2 | Operator runs `npm test --json` to get actual counts | CLI / Jest | Neutral — simple command | None | Script this as a repeatable step |
 | 3 | Operator searches for stale counts across all .md files | Grep across codebase | Tedious — multiple files to check | PP5: Previously stale counts appeared in multiple files | Automated search-and-replace |
 | 4 | Operator updates each file with correct count | Manual edits | Frustrated — this should be automated | PP5: Manual process will go stale again next generation | Build extraction into the pipeline or doc-sync task |
