@@ -21,7 +21,7 @@ const { VerdictParser } = require('../lib/verdict-parser');
 const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v7');
 // The actual codebase the builder will modify
 const CODEBASE_ROOT = path.join(__dirname, '..');
-const verdictParser = new VerdictParser();
+const verdictParser = new VerdictParser(PROJECT_DIR);
 
 let _isShuttingDown = false;
 let _currentExecutor = null;
