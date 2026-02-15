@@ -377,6 +377,14 @@ async function main() {
   async function handleShutdown(signal) {
     if (_isShuttingDown) return;
     _isShuttingDown = true;
+
+    // Replace SIGINT with force-exit handler for double Ctrl+C
+    process.removeAllListeners('SIGINT');
+    process.on('SIGINT', () => {
+      console.error('\nForce exit.');
+      process.exit(1);
+    });
+
     console.error(`\nReceived ${signal}. Shutting down gracefully...`);
 
     // Kill child processes: SIGTERM first, then SIGKILL after 2 seconds
@@ -384,7 +392,7 @@ async function main() {
       for (const child of _childProcesses) {
         try { child.kill('SIGTERM'); } catch (e) { /* already dead */ }
       }
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 2000).unref());
       for (const child of _childProcesses) {
         try { child.kill('SIGKILL'); } catch (e) { /* already dead */ }
       }
