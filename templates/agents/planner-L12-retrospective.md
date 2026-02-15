@@ -35,7 +35,9 @@ If no execution data is provided, skip this section and proceed with the standar
 
 ## What to Produce
 
-### `/12-retrospective/retrospective.md`
+**IMPORTANT**: Write all output files to the `8-analysis/` directory within the project directory specified in the "Project Paths" section below. Do NOT write to `12-retrospective/` or any other directory name.
+
+### `/8-analysis/retrospective.md`
 
 ```markdown
 # Project Retrospective: {Project Name}
