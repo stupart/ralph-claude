@@ -13,6 +13,25 @@ Write a comprehensive retrospective analyzing the entire project cycle. Document
 5. All commit history - build velocity and patterns
 6. `/5-features/{epic}/feature-{n}.md` - Feature specs for requirements fulfillment
 7. Any escalation or cascade records
+8. If provided: Execution Analysis report (per-layer timing, anomaly flags, review finding summaries)
+
+## Execution Pattern Analysis (if execution data is provided)
+
+If an Execution Analysis section is present in your context, include the following analysis:
+
+1. **Timeout Root Cause Analysis**: For each layer that timed out, determine the root cause:
+   - Retry speedup >2x indicates context exhaustion (the retry succeeded faster because it started with a fresh context window)
+   - Consistent timeout without speedup indicates the task was genuinely too large or misconfigured
+
+2. **Waste Assessment**: Report the timeout waste percentage (time spent on failed attempts / total runtime). Compare against baseline if available.
+
+3. **Anomaly Investigation**: For each anomaly flag, explain the likely architectural cause and recommend a fix:
+   - Context exhaustion → subtask batching was too aggressive
+   - Misconfiguration → timeout or maxTurns settings need adjustment
+
+4. **Pattern-to-Architecture Connection**: Connect execution patterns to specific architectural decisions made during planning. For example, if context exhaustion occurred during L8, trace it back to how subtasks were grouped.
+
+If no execution data is provided, skip this section and proceed with the standard retrospective analysis.
 
 ## What to Produce
 
