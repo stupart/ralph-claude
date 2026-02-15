@@ -13,6 +13,7 @@
 const path = require('path');
 const { spawn } = require('child_process');
 const readline = require('readline');
+const fsSync = require('fs');
 const { Ralph } = require('../lib/ralph');
 const { VerdictParser } = require('../lib/verdict-parser');
 
@@ -26,6 +27,7 @@ let _isShuttingDown = false;
 let _currentExecutor = null;
 let _currentLayerId = null;
 let _currentEpicId = null;
+const _childProcesses = new Set();
 
 /**
  * Parse CLI arguments
@@ -203,6 +205,8 @@ function createAgentExecutor(opts) {
         env: { ...process.env }
       });
 
+      _childProcesses.add(child);
+
       // Register process for kill enforcement
       if (spawnConfig.registerProcess) {
         spawnConfig.registerProcess(child);
@@ -229,6 +233,7 @@ function createAgentExecutor(opts) {
       });
 
       child.on('close', (code) => {
+        _childProcesses.delete(child);
         console.log(`\n  Agent exited with code ${code}`);
 
         if (code !== 0) {
@@ -252,6 +257,7 @@ function createAgentExecutor(opts) {
       });
 
       child.on('error', (err) => {
+        _childProcesses.delete(child);
         reject(new Error(`Failed to spawn claude: ${err.message}`));
       });
     });
@@ -372,7 +378,49 @@ async function main() {
     if (_isShuttingDown) return;
     _isShuttingDown = true;
     console.error(`\nReceived ${signal}. Shutting down gracefully...`);
-    // Shutdown sequence implemented in F1-T2
+
+    // Kill child processes: SIGTERM first, then SIGKILL after 2 seconds
+    try {
+      for (const child of _childProcesses) {
+        try { child.kill('SIGTERM'); } catch (e) { /* already dead */ }
+      }
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      for (const child of _childProcesses) {
+        try { child.kill('SIGKILL'); } catch (e) { /* already dead */ }
+      }
+    } catch (e) {
+      console.error('Error during executor shutdown:', e.message);
+    }
+
+    // Log pipeline_interrupted event
+    try {
+      const event = JSON.stringify({
+        timestamp: new Date().toISOString(),
+        type: 'pipeline_interrupted',
+        layer: _currentLayerId || null,
+        epic: _currentEpicId || null,
+        message: `Pipeline interrupted by ${signal}`
+      });
+      fsSync.appendFileSync(path.join(PROJECT_DIR, '_events.jsonl'), event + '\n');
+    } catch (e) {
+      console.error('Failed to log interrupted event:', e.message);
+    }
+
+    // Persist interrupted status
+    try {
+      const statusContent = [
+        '# Pipeline Status',
+        '',
+        `status: interrupted`,
+        `layer: ${_currentLayerId || 'unknown'}`,
+        `epic: ${_currentEpicId || 'unknown'}`,
+        `interrupted_at: ${new Date().toISOString()}`
+      ].join('\n');
+      fsSync.writeFileSync(path.join(PROJECT_DIR, '_status.md'), statusContent);
+    } catch (e) {
+      console.error('Failed to write interrupted status:', e.message);
+    }
+
     process.exit(0);
   }
 
