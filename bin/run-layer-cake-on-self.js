@@ -58,56 +58,6 @@ function parseArgs() {
 }
 
 /**
- * Parse verdict from agent text output.
- *
- * Looks for a structured verdict section in the judge's output:
- *   ## Verdict: PASS
- *   ## Verdict: ITERATE
- *   ### Issues:
- *   - [MINOR] Issue title: description
- *   - [MAJOR] Issue title: description
- *   - [ESCALATE] Issue title: description
- */
-function parseVerdict(output) {
-  // Look for verdict line
-  const verdictMatch = output.match(/##\s*Verdict:\s*(PASS|ITERATE)/i);
-  if (!verdictMatch) {
-    // Try alternate formats
-    const altMatch = output.match(/\*\*Verdict\*\*:\s*(PASS|ITERATE)/i);
-    if (!altMatch) return null;
-    return {
-      verdict: altMatch[1].toUpperCase(),
-      issues: parseIssues(output)
-    };
-  }
-
-  return {
-    verdict: verdictMatch[1].toUpperCase(),
-    issues: parseIssues(output)
-  };
-}
-
-/**
- * Parse issues from agent output text.
- * Looks for lines like: - [MINOR] Title: description
- */
-function parseIssues(output) {
-  const issues = [];
-  const issueRegex = /^[-*]\s*\[(MINOR|MAJOR|ESCALATE)\]\s*(.+?)(?::\s*(.+))?$/gim;
-  let match;
-
-  while ((match = issueRegex.exec(output)) !== null) {
-    issues.push({
-      severity: match[1].toUpperCase(),
-      title: match[2].trim(),
-      description: match[3]?.trim() || ''
-    });
-  }
-
-  return issues;
-}
-
-/**
  * Resolve context glob patterns to actual file contents.
  * Takes the spawnConfig.context.files patterns and reads matching files.
  */
