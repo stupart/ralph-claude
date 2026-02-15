@@ -145,11 +145,14 @@ describe('VerdictParser', () => {
       expect(result.issues).toHaveLength(2);
     });
 
-    it('PASS with issues → verdict stays PASS, issues preserved', () => {
+    it('PASS with MAJOR issues → verdict overridden to ITERATE', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse('## Verdict: PASS\n- [MAJOR] Issue: desc');
-      expect(result.verdict).toBe('PASS');
-      expect(result.issues).toHaveLength(1);
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.issues).toHaveLength(2);
       expect(result.issues[0].severity).toBe('MAJOR');
+      expect(result.issues[1].title).toBe('Verdict overridden');
+      warnSpy.mockRestore();
     });
 
     it('rawOutput contains original input string', () => {
