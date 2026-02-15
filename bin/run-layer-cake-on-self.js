@@ -565,7 +565,11 @@ async function main() {
   } while (result.status === 'waiting_human');
 }
 
-main().catch(err => {
-  console.error('Fatal error:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(err => {
+    console.error('Fatal error:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = { detectInterruptedState };
