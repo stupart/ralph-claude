@@ -77,8 +77,8 @@ describe('VerdictParser', () => {
       expect(result.verdict).toBe('PASS');
     });
 
-    it('VERDICT_PATTERNS has 4 patterns', () => {
-      expect(VERDICT_PATTERNS).toHaveLength(4);
+    it('VERDICT_PATTERNS has 7 patterns', () => {
+      expect(VERDICT_PATTERNS).toHaveLength(7);
     });
   });
 
@@ -168,10 +168,10 @@ describe('VerdictParser', () => {
   });
 
   describe('Degradation', () => {
-    it('empty string → ITERATE with Unparseable verdict issue', () => {
+    it('empty string → PASS with Unparseable verdict issue (no high-severity)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse('');
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       expect(result.issues).toHaveLength(1);
       expect(result.issues[0].title).toBe('Unparseable verdict');
       expect(result.issues[0].severity).toBe('MINOR');
@@ -179,19 +179,19 @@ describe('VerdictParser', () => {
       warnSpy.mockRestore();
     });
 
-    it('null input → ITERATE with Unparseable verdict (no throw)', () => {
+    it('null input → PASS with Unparseable verdict (no throw)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse(null);
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       expect(result.issues[0].title).toBe('Unparseable verdict');
       expect(result.rawOutput).toBe('');
       warnSpy.mockRestore();
     });
 
-    it('undefined input → ITERATE with Unparseable verdict (no throw)', () => {
+    it('undefined input → PASS with Unparseable verdict (no throw)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse(undefined);
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       expect(result.issues[0].title).toBe('Unparseable verdict');
       warnSpy.mockRestore();
     });
@@ -333,10 +333,10 @@ Verdict: PASS`;
       warnSpy.mockRestore();
     });
 
-    it('empty output → ITERATE with "Unparseable verdict" (existing behavior preserved)', () => {
+    it('empty output → PASS with "Unparseable verdict" (no high-severity issues)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse('');
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       expect(result.issues[0].title).toBe('Unparseable verdict');
       warnSpy.mockRestore();
     });

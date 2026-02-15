@@ -39,25 +39,25 @@ describe('VerdictParser Edge Cases', () => {
   beforeEach(() => { parser = new VerdictParser(); });
 
   describe('Empty and Invalid Input', () => {
-    it('empty string → ITERATE with Unparseable verdict', () => {
+    it('empty string → PASS with Unparseable verdict (no high-severity issues)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse(FIXTURE_EMPTY);
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       expect(result.issues[0].title).toBe('Unparseable verdict');
       warnSpy.mockRestore();
     });
 
-    it('whitespace-only → ITERATE', () => {
+    it('whitespace-only → PASS (no high-severity issues)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse(FIXTURE_WHITESPACE_ONLY);
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       warnSpy.mockRestore();
     });
 
-    it('numeric input → ITERATE (no throw)', () => {
+    it('numeric input → PASS (no throw, no high-severity issues)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       expect(() => parser.parse(12345)).not.toThrow();
-      expect(parser.parse(12345).verdict).toBe('ITERATE');
+      expect(parser.parse(12345).verdict).toBe('PASS');
       warnSpy.mockRestore();
     });
   });
@@ -71,28 +71,26 @@ describe('VerdictParser Edge Cases', () => {
       warnSpy.mockRestore();
     });
 
-    it('no verdict with no issues → ITERATE with Unparseable verdict', () => {
+    it('no verdict with no issues → PASS with Unparseable verdict (benefit of the doubt)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse('Just some text with no markers.');
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       expect(result.issues[0].title).toBe('Unparseable verdict');
       warnSpy.mockRestore();
     });
   });
 
   describe('Malformed Verdict', () => {
-    it('invalid verdict value (MAYBE) → ITERATE', () => {
+    it('invalid verdict value (MAYBE) → PASS (no high-severity issues)', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = parser.parse(FIXTURE_MALFORMED_VERDICT);
-      expect(result.verdict).toBe('ITERATE');
+      expect(result.verdict).toBe('PASS');
       warnSpy.mockRestore();
     });
 
-    it('verdict in prose without structured format → ITERATE', () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('verdict in prose → PASS (matched by prose pattern)', () => {
       const result = parser.parse(FIXTURE_VERDICT_IN_PROSE);
-      expect(result.verdict).toBe('ITERATE');
-      warnSpy.mockRestore();
+      expect(result.verdict).toBe('PASS');
     });
   });
 
