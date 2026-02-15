@@ -361,6 +361,19 @@ Agent prompt templates have vivid variants in `templates/agents/variants/` that 
 Variants follow the naming convention `{agent}.vivid.md` or `{agent}-base.vivid.md`.
 To discover all available variants, check the `templates/agents/variants/` directory.
 
+### Updating Test Counts
+
+Extract the current test count:
+```sh
+npx jest --json 2>/dev/null | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); console.log(d.numTotalTests+' tests, '+d.numTotalTestSuites+' suites')"
+```
+Update `README.md` (the "Running Tests" line) with the extracted values.
+
+Verify no stale counts remain (replace `OLD_COUNT` with the previous count):
+```sh
+grep -n 'OLD_COUNT' *.md
+```
+
 ---
 
 ## Tips
