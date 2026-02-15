@@ -406,9 +406,43 @@ async function main() {
     return;
   }
 
-  // --start-layer override: jump to a specific layer (bypasses recovery manager)
+  // Auto-detect interrupted state and resume
+  const interruptedState = detectInterruptedState(PROJECT_DIR);
+  if (interruptedState && !opts.startLayer) {
+    console.log(`Detected interrupted state at ${interruptedState.layer}. Resuming...`);
+
+    // Log pipeline_resumed event
+    try {
+      const event = JSON.stringify({
+        timestamp: new Date().toISOString(),
+        type: 'pipeline_resumed',
+        layer: interruptedState.layer,
+        epic: interruptedState.epic,
+        message: 'Resuming from interrupted state',
+        resumedFrom: interruptedState.layer
+      });
+      fsSync.appendFileSync(path.join(PROJECT_DIR, '_events.jsonl'), event + '\n');
+    } catch (e) {
+      console.error('Failed to log resumed event:', e.message);
+    }
+
+    // Set start layer from interrupted position
+    await ralph.state.read();
+    ralph.state.state.position.layer = interruptedState.layer;
+    if (interruptedState.epic && interruptedState.epic !== 'unknown') {
+      ralph.state.state.position.epic = interruptedState.epic;
+    }
+    ralph.state.state.position.iteration = 1;
+    await ralph.state.write();
+  }
+
+  // --start-layer override: jump to a specific layer (takes precedence over auto-resume)
   if (opts.startLayer) {
-    console.log(`[--start-layer] Overriding position to ${opts.startLayer}`);
+    if (interruptedState) {
+      console.log(`[--start-layer] Overriding auto-detected resume position (${interruptedState.layer}) with ${opts.startLayer}`);
+    } else {
+      console.log(`[--start-layer] Overriding position to ${opts.startLayer}`);
+    }
     await ralph.state.read();
     ralph.state.state.position.layer = opts.startLayer;
     ralph.state.state.position.epic = null;
