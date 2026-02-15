@@ -411,8 +411,8 @@ describe('E2E: Full Layer Cake Pipeline', () => {
     const mockExecutor = jest.fn().mockResolvedValue({});
     const result = await ralph.runLayerCycle(mockExecutor);
 
-    expect(result.status).toBe('advanced');
-    expect(result.to).toBeUndefined(); // COMPLETE state
+    expect(result.status).toBe('complete');
+    expect(result.to).toBe('COMPLETE');
 
     // Verify the state is COMPLETE
     const finalState = await ralph.state.read();
