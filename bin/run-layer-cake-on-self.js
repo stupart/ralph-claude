@@ -286,15 +286,8 @@ function createAgentExecutor(opts) {
 
         // Parse verdict for judge agents
         if (agentType === 'judge') {
-          const verdict = parseVerdict(stdout);
-          if (verdict) {
-            artifacts.reviewResult = verdict;
-            console.log(`\n  Verdict: ${verdict.verdict} (${verdict.issues.length} issues)`);
-          } else {
-            console.log(`\n  WARNING: Could not parse verdict from judge output`);
-            // Default to PASS if we can't parse - the human can intervene
-            artifacts.reviewResult = { verdict: 'PASS', issues: [] };
-          }
+          artifacts.reviewResult = verdictParser.parse(stdout);
+          console.log(`\n  Verdict: ${artifacts.reviewResult.verdict} (${artifacts.reviewResult.issues.length} issues)`);
         }
 
         resolve(artifacts);
