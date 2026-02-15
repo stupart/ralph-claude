@@ -52,6 +52,9 @@ function parseArgs() {
       case '--quiet':
         opts.verbose = false;
         break;
+      case '--start-layer':
+        opts.startLayer = args[++i];
+        break;
     }
   }
   return opts;
@@ -336,6 +339,18 @@ async function main() {
   if (initResult.status === 'complete') {
     console.log('Project is already complete!');
     return;
+  }
+
+  // --start-layer override: jump to a specific layer (bypasses recovery manager)
+  if (opts.startLayer) {
+    console.log(`[--start-layer] Overriding position to ${opts.startLayer}`);
+    await ralph.state.read();
+    ralph.state.state.position.layer = opts.startLayer;
+    ralph.state.state.position.epic = null;
+    ralph.state.state.position.feature = null;
+    ralph.state.state.position.task = null;
+    ralph.state.state.position.iteration = 1;
+    await ralph.state.write();
   }
 
   // Create the agent executor
