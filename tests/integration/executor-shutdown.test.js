@@ -45,21 +45,43 @@ describe('ClaudeExecutor.shutdown()', () => {
   });
 
   it('existing cleanup handlers remain registered after shutdown() addition', () => {
-    // Verify the _registerCleanup function is still called during execute()
-    // by checking that the ClaudeExecutor class has both execute and shutdown methods
     const executor = new ClaudeExecutor();
-    expect(typeof executor.execute).toBe('function');
-    expect(typeof executor.shutdown).toBe('function');
 
-    // Verify process listeners exist for SIGTERM and SIGINT
-    // (These are registered by _registerCleanup when execute() is called,
-    // but we just verify they can coexist with shutdown())
-    const sigintCount = process.listenerCount('SIGINT');
-    const sigtermCount = process.listenerCount('SIGTERM');
+    // Capture baseline listener counts before shutdown
+    const sigintBefore = process.listenerCount('SIGINT');
+    const sigtermBefore = process.listenerCount('SIGTERM');
 
-    // There should be at least the default listeners
-    expect(sigintCount).toBeGreaterThanOrEqual(0);
-    expect(sigtermCount).toBeGreaterThanOrEqual(0);
+    // Call shutdown — it should NOT remove or modify process signal listeners
+    executor.shutdown();
+
+    const sigintAfter = process.listenerCount('SIGINT');
+    const sigtermAfter = process.listenerCount('SIGTERM');
+
+    // shutdown() must not reduce listener counts (no removeAllListeners calls)
+    expect(sigintAfter).toBeGreaterThanOrEqual(sigintBefore);
+    expect(sigtermAfter).toBeGreaterThanOrEqual(sigtermBefore);
+  });
+
+  it('shutdown() does not interfere with _registerCleanup signal handlers', () => {
+    // Verify that the shutdown method's implementation does not:
+    // 1. Call process.removeAllListeners()
+    // 2. Modify the _cleanupRegistered flag
+    // 3. Overwrite SIGTERM/SIGINT handlers
+    //
+    // We test this by calling shutdown() multiple times and verifying
+    // process listener counts remain stable
+    const executor = new ClaudeExecutor();
+
+    const sigintBefore = process.listenerCount('SIGINT');
+    const sigtermBefore = process.listenerCount('SIGTERM');
+
+    // Multiple shutdown calls should be safe and not affect listeners
+    executor.shutdown();
+    executor.shutdown();
+    executor.shutdown();
+
+    expect(process.listenerCount('SIGINT')).toBe(sigintBefore);
+    expect(process.listenerCount('SIGTERM')).toBe(sigtermBefore);
   });
 });
 
