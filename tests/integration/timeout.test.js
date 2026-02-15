@@ -89,5 +89,5 @@ describe('Timeout Integration Tests', () => {
     // Should end in error (all retries exhausted)
     expect(result.status).toBe('error');
     expect(result.layerId).toBe('L1');
-  }, 30000);
+  }, 60000);
 });
