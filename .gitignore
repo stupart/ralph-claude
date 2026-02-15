@@ -2,3 +2,10 @@
 Cargo.lock
 Porpus/
 skill-tree/
+
+# Layer Cake generation artifacts
+_layer-cake-v*/
+
+# Build artifacts
+node_modules/
+coverage/
