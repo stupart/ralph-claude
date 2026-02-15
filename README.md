@@ -348,6 +348,19 @@ npx jest --config jest.config.js --coverage --forceExit  # with coverage report
 
 Runs 1054 tests across 50 suites covering all orchestration modules.
 
+### Template Variants
+
+Agent prompt templates have vivid variants in `templates/agents/variants/` that use more descriptive, metaphor-driven language. These can produce richer agent output at the cost of longer prompts.
+
+| Variant | Path | Description |
+|---------|------|-------------|
+| Planner (vivid) | `templates/agents/variants/planner-base.vivid.md` | Uses architectural metaphors (blueprints, load-bearing walls, site surveys) to frame planning as structural engineering. Same structure and rules as the base template. |
+| Builder (vivid) | `templates/agents/variants/builder.vivid.md` | Uses craftsmanship metaphors (master carpenter, jq/ripgrep precision, tight joints) to frame implementation as disciplined craft. Same tool access and commit protocol as the base template. |
+| Judge (vivid) | `templates/agents/variants/judge-base.vivid.md` | Uses structural inspection metaphors (flashlight on a construction site, tapping walls, testing joints) to frame review as engineering inspection. Same severity classification and review format as the base template. |
+
+Variants follow the naming convention `{agent}.vivid.md` or `{agent}-base.vivid.md`.
+To discover all available variants, check the `templates/agents/variants/` directory.
+
 ---
 
 ## Tips
