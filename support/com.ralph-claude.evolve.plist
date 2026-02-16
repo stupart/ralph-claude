@@ -17,5 +17,19 @@
 
   <key>WorkingDirectory</key>
   <string>{{RALPH_ROOT}}</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>22</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>{{RALPH_ROOT}}/_evolution/logs/evolve-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>{{RALPH_ROOT}}/_evolution/logs/evolve-stderr.log</string>
 </dict>
 </plist>
