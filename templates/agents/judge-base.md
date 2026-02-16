@@ -6,51 +6,64 @@ Your verdict MUST match one of these exact patterns. The system uses regex patte
 
 **Recognized Verdict Formats:**
 
-1. **Verdict with colon and uppercase**
-   ```
-   Verdict: PASS
-   Verdict: ITERATE
-   ```
-
-2. **Final verdict with colon**
-   ```
-   Final verdict: PASS
-   Final verdict: ITERATE
-   ```
-
-3. **Heading format (h2 or h3)**
+1. **Heading with "Verdict:" prefix**
    ```
    ## Verdict: PASS
    ### Verdict: ITERATE
    ```
 
-4. **Heading format without colon**
+2. **Bold with "Verdict" prefix**
    ```
-   ## Verdict
+   **Verdict**: PASS
+   **Verdict:** ITERATE
+   ```
+
+3. **Plain "Verdict:" prefix**
+   ```
+   Verdict: PASS
+   Verdict: ITERATE
+   ```
+
+4. **Natural language verdict**
+   ```
+   My final verdict is PASS
+   The verdict is ITERATE
+   ```
+
+5. **Recommendation prefix**
+   ```
+   Recommendation: PASS
+   Recommendation: ITERATE
+   ```
+
+6. **Standalone verdict on its own line**
+   ```
    PASS
+   ITERATE
    ```
 
-5. **Status with colon**
+7. **Bold emphasis on standalone line**
    ```
-   Status: PASS
-   Status: ITERATE
-   ```
-
-6. **Decision with colon**
-   ```
-   Decision: PASS
-   Decision: ITERATE
+   **PASS**
+   **ITERATE**
    ```
 
-7. **Result with colon**
+8. **Bare heading (without "Verdict:" prefix)**
    ```
-   Result: PASS
-   Result: ITERATE
+   ## PASS
+   # ITERATE
+   ### PASS
+   ```
+
+9. **"Overall" prefix**
+   ```
+   Overall Verdict: PASS
+   Overall: ITERATE
    ```
 
 **Important:** The parser extracts the LAST occurrence if multiple verdicts appear. Always place your final decision at the end of your response.
 
-**Do NOT use:** "Overall: PASS", "**PASS**" (bold only), or bare headings like "## PASS" - these are NOT recognized by the current parser.
+**Do NOT use:** Verdict words embedded in prose (e.g., "this will PASS the criteria") — these are not recognized as structured verdicts. Always use one of the formats above on its own line or with a clear prefix.
 
 ### Automatic Verdict Override
 
