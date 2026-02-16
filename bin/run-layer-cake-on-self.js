@@ -16,11 +16,9 @@ const readline = require('readline');
 const fsSync = require('fs');
 const { Ralph } = require('../lib/ralph');
 const { VerdictParser } = require('../lib/verdict-parser');
-const { EventLogger, EVENT_TYPES } = require('../lib/event-logger');
-const { DEFAULT_LAYER_THRESHOLDS } = require('../lib/stall-detector');
 
 // Project directory for the meta-improvement
-const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v8');
+const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v7');
 // The actual codebase the builder will modify
 const CODEBASE_ROOT = path.join(__dirname, '..');
 const verdictParser = new VerdictParser(PROJECT_DIR);
@@ -30,8 +28,6 @@ let _currentExecutor = null;
 let _currentLayerId = null;
 let _currentEpicId = null;
 const _childProcesses = new Set();
-// Verdict result accumulator for coverage metric (E2-F4)
-const _verdictResults = [];
 
 /**
  * Parse CLI arguments
@@ -66,65 +62,9 @@ function parseArgs() {
       case '--start-layer':
         opts.startLayer = args[++i];
         break;
-      case '--stall-thresholds':
-        try {
-          opts.stallThresholds = JSON.parse(args[++i]);
-        } catch (e) {
-          console.warn('Warning: Invalid JSON for --stall-thresholds, using defaults');
-          opts.stallThresholds = null;
-        }
-        break;
-      case '--stall-multiplier': {
-        const val = parseFloat(args[++i]);
-        if (isNaN(val) || val <= 0) {
-          console.warn('Warning: Invalid --stall-multiplier value, using default (1)');
-          opts.stallMultiplier = 1;
-        } else {
-          opts.stallMultiplier = val;
-        }
-        break;
-      }
-      case '--stall-kill':
-        opts.stallKill = true;
-        break;
     }
   }
   return opts;
-}
-
-/**
- * Build merged stall thresholds from defaults, multiplier, and explicit overrides.
- * Precedence: defaults → multiplier → explicit overrides.
- * @param {Object} defaults - DEFAULT_LAYER_THRESHOLDS (values in ms)
- * @param {number} multiplier - Scaling factor (default 1)
- * @param {Object|null} overrides - Explicit per-layer overrides (values in seconds from CLI)
- * @returns {Object} Merged thresholds in milliseconds
- */
-function buildStallThresholds(defaults, multiplier = 1, overrides = null) {
-  const result = {};
-
-  // Step 1: Copy defaults and apply multiplier
-  for (const [layer, ms] of Object.entries(defaults)) {
-    result[layer] = ms * multiplier;
-  }
-
-  // Step 2: Apply explicit overrides (CLI values are in seconds, convert to ms)
-  if (overrides) {
-    for (const [layer, seconds] of Object.entries(overrides)) {
-      if (!/^L\d+$/.test(layer)) {
-        console.warn(`Warning: Unknown layer ID '${layer}' in --stall-thresholds, ignoring`);
-        continue;
-      }
-      if (seconds <= 0) {
-        // Disable stall detection for this layer
-        result[layer] = Infinity;
-      } else {
-        result[layer] = seconds * 1000;
-      }
-    }
-  }
-
-  return result;
 }
 
 /**
@@ -223,54 +163,6 @@ async function resolveContext(spawnConfig) {
 }
 
 /**
- * Read all subtask files from an epic's 7-subtasks directory.
- * @param {string} epicDir - Path to epic directory (e.g., '7-subtasks/epic-a')
- * @returns {Array<{path: string, content: string}>} Subtask files in alphabetical order
- */
-function readSubtaskList(epicDir) {
-  const fullEpicDir = path.join(PROJECT_DIR, epicDir);
-
-  try {
-    // Check if directory exists
-    if (!fsSync.existsSync(fullEpicDir)) {
-      console.warn(`Warning: Subtask directory not found: ${fullEpicDir}`);
-      return [];
-    }
-
-    // Discover all .md files recursively
-    const entries = fsSync.readdirSync(fullEpicDir, { recursive: true, withFileTypes: true });
-    const mdFiles = entries
-      .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
-      .map(entry => path.join(entry.parentPath || entry.path || fullEpicDir, entry.name));
-
-    if (mdFiles.length === 0) {
-      console.warn(`Warning: No .md subtask files found in ${fullEpicDir}`);
-      return [];
-    }
-
-    // Sort alphabetically for deterministic ordering
-    mdFiles.sort();
-
-    // Read file contents
-    const subtasks = [];
-    for (const filePath of mdFiles) {
-      try {
-        const content = fsSync.readFileSync(filePath, 'utf8');
-        const relativePath = path.relative(PROJECT_DIR, filePath);
-        subtasks.push({ path: relativePath, content });
-      } catch (err) {
-        console.warn(`Warning: Could not read subtask file ${filePath}: ${err.message}`);
-      }
-    }
-
-    return subtasks;
-  } catch (err) {
-    console.warn(`Warning: Failed to read subtask list from ${epicDir}: ${err.message}`);
-    return [];
-  }
-}
-
-/**
  * Build the full prompt for an agent, including context files.
  */
 async function buildFullPrompt(spawnConfig, layerId) {
@@ -295,10 +187,8 @@ async function buildFullPrompt(spawnConfig, layerId) {
   }
 
   // Add instructions for judges to output parseable verdicts
-  // Only append verdict format block if the template doesn't already contain the CRITICAL section
   if (spawnConfig.agentType === 'judge') {
-    if (!prompt.includes('CRITICAL: Verdict Format Requirements')) {
-      prompt += `\n\n## CRITICAL: Verdict Output Format
+    prompt += `\n\n## CRITICAL: Verdict Output Format
 
 You MUST end your review with a structured verdict section in this exact format:
 
@@ -314,7 +204,6 @@ OR
 - [ESCALATE] Issue title: Description of the issue
 
 This format is machine-parsed. Do not deviate from it.`;
-    }
 
     prompt += `\n\n## Review Scope Notes
 
@@ -330,19 +219,10 @@ Documents in \`3-synthesis/\` are pre-build planning artifacts. Staleness relati
  * @param {Object} spawnConfig - From Ralph's AgentSpawner
  * @returns {Promise<Object>} Artifacts including reviewResult for judges
  */
-function createAgentExecutor(opts, ralph) {
+function createAgentExecutor(opts) {
   return async function agentExecutor(spawnConfig) {
     const layerId = spawnConfig.layerId;
     const agentType = spawnConfig.agentType;
-
-    // Create an AbortController for this session and wire it to the stall detector
-    const sessionAbortController = new AbortController();
-    ralph?.stallDetector?.setAbortController(sessionAbortController);
-
-    // Capture layer and epic context for verdict parser (E2-F3)
-    const verdictLayer = layerId || 'unknown';
-    const epicFromConfig = spawnConfig.context?.position?.epic;
-    const verdictEpic = epicFromConfig || (layerId === 'L11' ? 'all' : 'unknown');
 
     console.log(`\n${'='.repeat(60)}`);
     console.log(`  Spawning ${agentType} agent for ${layerId}`);
@@ -390,17 +270,12 @@ function createAgentExecutor(opts, ralph) {
         spawnConfig.registerProcess(child);
       }
 
-      // Handle abort signal from spawnConfig
+      // Handle abort signal
       if (spawnConfig.abortSignal) {
         spawnConfig.abortSignal.addEventListener('abort', () => {
           if (!child.killed) child.kill('SIGTERM');
         });
       }
-
-      // Handle abort signal from stall detector's kill-on-critical
-      sessionAbortController.signal.addEventListener('abort', () => {
-        if (!child.killed) child.kill('SIGTERM');
-      });
 
       let stdout = '';
       let stderr = '';
@@ -417,8 +292,6 @@ function createAgentExecutor(opts, ralph) {
 
       child.on('close', (code) => {
         _childProcesses.delete(child);
-        // Clear the abort controller reference from the stall detector
-        ralph?.stallDetector?.setAbortController(null);
         console.log(`\n  Agent exited with code ${code}`);
 
         if (code !== 0) {
@@ -434,20 +307,8 @@ function createAgentExecutor(opts, ralph) {
 
         // Parse verdict for judge agents
         if (agentType === 'judge') {
-          artifacts.reviewResult = verdictParser.parse(stdout, {
-            layer: verdictLayer,
-            epic: verdictEpic,
-            projectDir: PROJECT_DIR
-          });
+          artifacts.reviewResult = verdictParser.parse(stdout);
           console.log(`\n  Verdict: ${artifacts.reviewResult.verdict} (${artifacts.reviewResult.issues.length} issues)`);
-
-          // Accumulate verdict result for coverage metric (E2-F4)
-          _verdictResults.push({
-            layer: verdictLayer,
-            epic: verdictEpic,
-            verdict: artifacts.reviewResult.verdict,
-            parsedExplicitly: artifacts.reviewResult.parsedExplicitly
-          });
         }
 
         resolve(artifacts);
@@ -528,13 +389,6 @@ async function main() {
   console.log(`Max turns: ${opts.maxTurns}`);
   console.log('');
 
-  // Build stall thresholds from CLI args
-  const layerThresholds = buildStallThresholds(
-    DEFAULT_LAYER_THRESHOLDS,
-    opts.stallMultiplier || 1,
-    opts.stallThresholds || null
-  );
-
   // Initialize Ralph
   const ralph = new Ralph(PROJECT_DIR, {
     verbose: opts.verbose,
@@ -542,9 +396,7 @@ async function main() {
     agentTimeout: opts.timeout,
     dryRun: opts.dryRun,
     maxRetries: 2,
-    maxCascadeDepth: 5,
-    layerThresholds,
-    killOnCritical: opts.stallKill || false
+    maxCascadeDepth: 5
   });
 
   // Also point the spawner templates at the actual templates directory
@@ -605,7 +457,7 @@ async function main() {
   }
 
   // Create the agent executor
-  const agentExecutor = createAgentExecutor(opts, ralph);
+  const agentExecutor = createAgentExecutor(opts);
   _currentExecutor = agentExecutor; // Capture for signal handler
 
   // Track current layer/epic for signal handler context
@@ -715,35 +567,6 @@ async function main() {
       console.log(JSON.stringify(result, null, 2));
     }
   } while (result.status === 'waiting_human');
-
-  // Log verdict coverage metric after pipeline completes (E2-F4)
-  if (_verdictResults.length > 0) {
-    const totalVerdicts = _verdictResults.length;
-    const parseableCount = _verdictResults.filter(r => r.parsedExplicitly).length;
-    const parseablePercentage = Math.round((parseableCount / totalVerdicts) * 100);
-
-    // Per-layer breakdown
-    const perLayer = {};
-    for (const r of _verdictResults) {
-      if (!perLayer[r.layer]) {
-        perLayer[r.layer] = { total: 0, parseable: 0 };
-      }
-      perLayer[r.layer].total++;
-      if (r.parsedExplicitly) perLayer[r.layer].parseable++;
-    }
-    for (const layer of Object.keys(perLayer)) {
-      const l = perLayer[layer];
-      l.percentage = Math.round((l.parseable / l.total) * 100);
-    }
-
-    console.log(`\nVerdict coverage: ${parseableCount}/${totalVerdicts} (${parseablePercentage}%) parseable`);
-
-    ralph.eventLogger.log({
-      type: EVENT_TYPES.VERDICT_COVERAGE,
-      message: `Verdict coverage: ${parseableCount}/${totalVerdicts} (${parseablePercentage}%) parseable`,
-      meta: { totalVerdicts, parseableCount, parseablePercentage, perLayer }
-    });
-  }
 }
 
 if (require.main === module) {
