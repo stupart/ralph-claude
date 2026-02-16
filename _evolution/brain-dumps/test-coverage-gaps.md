@@ -31,3 +31,12 @@ The existing test suite covers main happy paths effectively but has gaps in:
 3. **Agent spawn configuration in `lib/agent-spawner.js`**: Write tests for spawn edge cases — missing template files, invalid template content, timeout during spawn, spawn with conflicting options. Verify `createSpawnConfig()` produces correct configurations for each layer type. Expected: clear error messages for misconfiguration.
 
 4. **Verdict parsing edge cases in `lib/verdict-parser.js`**: Write tests for malformed verdict strings — missing verdict keyword, ambiguous PASS/ITERATE, truncated output, extra whitespace, mixed case. Expected: parser returns consistent default values for unparseable input.
+
+## What NOT to do
+
+1. Do not modify existing passing tests — only add new test files or new `describe`/`test` blocks
+2. Do not write trivial assertion-only tests (e.g., `expect(true).toBe(true)`) — every test must exercise actual production code
+3. Do not create tests that depend on external services, network access, or filesystem timing
+4. Do not duplicate existing test coverage — check `tests/integration/` for existing tests before writing new ones
+5. Do not write tests that depend on execution order or shared mutable state between test cases
+6. Do not introduce new test dependencies or frameworks — use Jest and existing helpers only
