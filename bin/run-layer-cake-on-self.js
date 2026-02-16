@@ -170,34 +170,44 @@ async function resolveContext(spawnConfig) {
 function readSubtaskList(epicDir) {
   const fullEpicDir = path.join(PROJECT_DIR, epicDir);
 
-  // Check if directory exists
-  if (!fsSync.existsSync(fullEpicDir)) {
-    console.warn(`Warning: Subtask directory not found: ${fullEpicDir}`);
+  try {
+    // Check if directory exists
+    if (!fsSync.existsSync(fullEpicDir)) {
+      console.warn(`Warning: Subtask directory not found: ${fullEpicDir}`);
+      return [];
+    }
+
+    // Discover all .md files recursively
+    const entries = fsSync.readdirSync(fullEpicDir, { recursive: true, withFileTypes: true });
+    const mdFiles = entries
+      .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
+      .map(entry => path.join(entry.parentPath || entry.path || fullEpicDir, entry.name));
+
+    if (mdFiles.length === 0) {
+      console.warn(`Warning: No .md subtask files found in ${fullEpicDir}`);
+      return [];
+    }
+
+    // Sort alphabetically for deterministic ordering
+    mdFiles.sort();
+
+    // Read file contents
+    const subtasks = [];
+    for (const filePath of mdFiles) {
+      try {
+        const content = fsSync.readFileSync(filePath, 'utf8');
+        const relativePath = path.relative(PROJECT_DIR, filePath);
+        subtasks.push({ path: relativePath, content });
+      } catch (err) {
+        console.warn(`Warning: Could not read subtask file ${filePath}: ${err.message}`);
+      }
+    }
+
+    return subtasks;
+  } catch (err) {
+    console.warn(`Warning: Failed to read subtask list from ${epicDir}: ${err.message}`);
     return [];
   }
-
-  // Discover all .md files recursively
-  const entries = fsSync.readdirSync(fullEpicDir, { recursive: true, withFileTypes: true });
-  const mdFiles = entries
-    .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
-    .map(entry => path.join(entry.parentPath || entry.path || fullEpicDir, entry.name));
-
-  if (mdFiles.length === 0) {
-    console.warn(`Warning: No .md subtask files found in ${fullEpicDir}`);
-    return [];
-  }
-
-  // Sort alphabetically for deterministic ordering
-  mdFiles.sort();
-
-  // Read file contents
-  const subtasks = mdFiles.map(filePath => {
-    const content = fsSync.readFileSync(filePath, 'utf8');
-    const relativePath = path.relative(PROJECT_DIR, filePath);
-    return { path: relativePath, content };
-  });
-
-  return subtasks;
 }
 
 /**
