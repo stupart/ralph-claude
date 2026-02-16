@@ -168,8 +168,36 @@ async function resolveContext(spawnConfig) {
  * @returns {Array<{path: string, content: string}>} Subtask files in alphabetical order
  */
 function readSubtaskList(epicDir) {
-  // TODO: Implement recursive .md file discovery
-  return [];
+  const fullEpicDir = path.join(PROJECT_DIR, epicDir);
+
+  // Check if directory exists
+  if (!fsSync.existsSync(fullEpicDir)) {
+    console.warn(`Warning: Subtask directory not found: ${fullEpicDir}`);
+    return [];
+  }
+
+  // Discover all .md files recursively
+  const entries = fsSync.readdirSync(fullEpicDir, { recursive: true, withFileTypes: true });
+  const mdFiles = entries
+    .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
+    .map(entry => path.join(entry.parentPath || entry.path || fullEpicDir, entry.name));
+
+  if (mdFiles.length === 0) {
+    console.warn(`Warning: No .md subtask files found in ${fullEpicDir}`);
+    return [];
+  }
+
+  // Sort alphabetically for deterministic ordering
+  mdFiles.sort();
+
+  // Read file contents
+  const subtasks = mdFiles.map(filePath => {
+    const content = fsSync.readFileSync(filePath, 'utf8');
+    const relativePath = path.relative(PROJECT_DIR, filePath);
+    return { path: relativePath, content };
+  });
+
+  return subtasks;
 }
 
 /**
