@@ -4,25 +4,26 @@ Ralph is a Layer Cake orchestrator for autonomous code generation. It manages 12
 
 ## The problem
 
-Constructor options in `lib/ralph.js` and other modules accept values without validation. Negative timeouts, non-existent directory paths, wrong types, and out-of-range values pass through silently, causing cryptic runtime errors later in the pipeline. For example:
-- Passing `agentTimeout: -1` to Ralph's constructor causes agents to timeout immediately with no useful error
-- Passing a non-existent `projectRoot` causes failures deep in the pipeline when trying to read artifacts
-- Passing `maxRetries: "three"` (string) causes unexpected behavior in retry loops
+Configuration values loaded by `lib/config.js` are accepted without validation. The `loadConfig()` function merges defaults, file config, and overrides via `mergeConfig()`, but never checks types or ranges. Negative timeouts, wrong types, and out-of-range values pass through silently, causing cryptic runtime errors later in the pipeline. For example:
+- Setting `timeout: -1` in `ralph.config.json` causes agents to timeout immediately with no useful error
+- Setting `maxRetries: "three"` (string) causes unexpected behavior in retry loops
+- Setting `concurrency: 0` causes the parallel executor to hang indefinitely
+- Setting `tier: "huge"` (invalid enum) passes through silently and causes confusing failures in agent spawning
 
 ## What to fix
 
-1. **Type validation for Ralph constructor options**: Verify `agentTimeout` is a positive number, `maxRetries` is a non-negative integer, `verbose` is a boolean, `projectRoot` is a string. Throw `TypeError` with descriptive message on violation. Acceptance: `new Ralph('/tmp', { agentTimeout: -1 })` throws.
+1. **Type validation in `mergeConfig()`**: After merging defaults, file config, and overrides, validate that `timeout` is a positive number, `maxRetries` is a non-negative integer, `verbose` is a boolean, `concurrency` is a positive integer. Throw `TypeError` with descriptive message on violation. Acceptance: `mergeConfig({}, { timeout: "fast" })` throws.
 
-2. **Path existence validation**: Verify `projectRoot` directory exists at construction time. Throw with clear message including the path. Acceptance: `new Ralph('/nonexistent')` throws with message containing the path.
+2. **Range validation in `mergeConfig()`**: Reject `timeout < 0` and `timeout > 3600000` (1 hour max). Reject `maxRetries < 0` and `maxRetries > 10`. Reject `concurrency < 1` and `concurrency > 16`. Acceptance: boundary values are accepted, out-of-range values throw with a message stating the valid range.
 
-3. **Range validation for timeouts**: Reject `agentTimeout < 0` and `agentTimeout > 3600000` (1 hour max). Reject `maxRetries < 0` and `maxRetries > 10`. Acceptance: boundary values are accepted, out-of-range values throw.
+3. **Enum validation for `tier` in `mergeConfig()`**: Verify `tier` is one of the known tier values ('small', 'medium', 'large'). Acceptance: `mergeConfig({}, { tier: 'huge' })` throws with message listing valid options.
 
-4. **Enum validation for tier option**: Verify `tier` is one of the known tier values ('small', 'medium', 'large'). Acceptance: `new Ralph('/tmp', { tier: 'huge' })` throws with message listing valid options.
+4. **Config file parse error context in `readConfigFile()`**: When `ralph.config.json` contains invalid JSON, include the file path and a hint about common syntax errors. Acceptance: a malformed config file produces an error message containing the filename and the JSON parse error detail.
 
 ## What NOT to do
 
-1. Do not change the default values for any option
+1. Do not change the default values in the `DEFAULTS` object
 2. Do not add external validation libraries (joi, yup, zod, etc.)
 3. Do not validate internal-only options that are never user-facing
-4. Do not add validation to hot paths that would impact per-layer performance
-5. Do not change the constructor signature — keep `(projectRoot, options = {})`
+4. Do not change the function signatures of `loadConfig()`, `mergeConfig()`, or `readConfigFile()`
+5. Do not remove the `ALLOWED_KEYS` filtering — validation is in addition to key filtering, not a replacement
