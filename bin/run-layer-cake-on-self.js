@@ -28,6 +28,8 @@ let _currentExecutor = null;
 let _currentLayerId = null;
 let _currentEpicId = null;
 const _childProcesses = new Set();
+// Verdict result accumulator for coverage metric (E2-F4)
+const _verdictResults = [];
 
 /**
  * Parse CLI arguments
@@ -369,6 +371,14 @@ function createAgentExecutor(opts) {
             projectDir: PROJECT_DIR
           });
           console.log(`\n  Verdict: ${artifacts.reviewResult.verdict} (${artifacts.reviewResult.issues.length} issues)`);
+
+          // Accumulate verdict result for coverage metric (E2-F4)
+          _verdictResults.push({
+            layer: verdictLayer,
+            epic: verdictEpic,
+            verdict: artifacts.reviewResult.verdict,
+            parsedExplicitly: artifacts.reviewResult.parsedExplicitly
+          });
         }
 
         resolve(artifacts);
