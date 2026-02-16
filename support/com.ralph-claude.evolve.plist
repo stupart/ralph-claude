@@ -31,5 +31,14 @@
 
   <key>StandardErrorPath</key>
   <string>{{RALPH_ROOT}}/_evolution/logs/evolve-stderr.log</string>
+
+  <key>KeepAlive</key>
+  <false/>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
 </dict>
 </plist>
