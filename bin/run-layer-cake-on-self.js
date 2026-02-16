@@ -18,7 +18,7 @@ const { Ralph } = require('../lib/ralph');
 const { VerdictParser } = require('../lib/verdict-parser');
 
 // Project directory for the meta-improvement
-const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v7');
+const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v8');
 // The actual codebase the builder will modify
 const CODEBASE_ROOT = path.join(__dirname, '..');
 const verdictParser = new VerdictParser(PROJECT_DIR);
@@ -160,6 +160,16 @@ async function resolveContext(spawnConfig) {
   }
 
   return contextText;
+}
+
+/**
+ * Read all subtask files from an epic's 7-subtasks directory.
+ * @param {string} epicDir - Path to epic directory (e.g., '7-subtasks/epic-a')
+ * @returns {Array<{path: string, content: string}>} Subtask files in alphabetical order
+ */
+function readSubtaskList(epicDir) {
+  // TODO: Implement recursive .md file discovery
+  return [];
 }
 
 /**
