@@ -342,6 +342,71 @@ Verdict: PASS`;
     });
   });
 
+  describe('parsedExplicitly Field', () => {
+    it('explicit verdict via heading → parsedExplicitly: true', () => {
+      const result = parser.parse('## Verdict: PASS\nAll good.');
+      expect(result.parsedExplicitly).toBe(true);
+    });
+
+    it('explicit verdict via plain format → parsedExplicitly: true', () => {
+      const result = parser.parse('Verdict: ITERATE\nNeeds work.');
+      expect(result.parsedExplicitly).toBe(true);
+    });
+
+    it('explicit verdict via bold format → parsedExplicitly: true', () => {
+      const result = parser.parse('**Verdict**: PASS');
+      expect(result.parsedExplicitly).toBe(true);
+    });
+
+    it('explicit verdict via expanded bold emphasis → parsedExplicitly: true', () => {
+      const result = parser.parse('Review done.\n**PASS**\n');
+      expect(result.parsedExplicitly).toBe(true);
+    });
+
+    it('explicit verdict via Overall prefix → parsedExplicitly: true', () => {
+      const result = parser.parse('Overall Verdict: PASS');
+      expect(result.parsedExplicitly).toBe(true);
+    });
+
+    it('no verdict, no high-severity → defaults to PASS, parsedExplicitly: false', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('Some text with no verdict.');
+      expect(result.verdict).toBe('PASS');
+      expect(result.parsedExplicitly).toBe(false);
+      warnSpy.mockRestore();
+    });
+
+    it('no verdict, high-severity issues → defaults to ITERATE, parsedExplicitly: false', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('Review notes\n- [MAJOR] Bug: Memory leak');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.parsedExplicitly).toBe(false);
+      warnSpy.mockRestore();
+    });
+
+    it('PASS overridden by MAJOR issues → parsedExplicitly: false', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('## Verdict: PASS\n- [MAJOR] Security: SQL injection');
+      expect(result.verdict).toBe('ITERATE');
+      expect(result.parsedExplicitly).toBe(false);
+      warnSpy.mockRestore();
+    });
+
+    it('empty input → parsedExplicitly: false', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse('');
+      expect(result.parsedExplicitly).toBe(false);
+      warnSpy.mockRestore();
+    });
+
+    it('null input → parsedExplicitly: false', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = parser.parse(null);
+      expect(result.parsedExplicitly).toBe(false);
+      warnSpy.mockRestore();
+    });
+  });
+
   describe('Expanded Patterns', () => {
     describe('Bold markdown emphasis (**PASS** / **ITERATE**)', () => {
       it('**PASS** on standalone line → PASS', () => {
