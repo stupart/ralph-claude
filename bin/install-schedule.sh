@@ -14,10 +14,14 @@ if [ "$1" = "--uninstall" ]; then
   fi
 
   echo "Unloading agent..."
-  launchctl unload "$TARGET" 2>/dev/null || true
+  if ! launchctl unload "$TARGET" 2>/dev/null; then
+    echo "Warning: launchctl unload failed. The agent may need manual cleanup." >&2
+  fi
 
   rm -f "$TARGET"
 
+  echo "Uninstalled: removed $TARGET"
+  echo "Verify: launchctl list | grep ralph (should return nothing)"
   exit 0
 fi
 
