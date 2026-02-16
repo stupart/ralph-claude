@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ralph-claude.evolve</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>node</string>
+    <string>{{RALPH_ROOT}}/bin/evolve.js</string>
+    <string>--variant</string>
+    <string>vivid</string>
+    <string>--hours</string>
+    <string>8</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>{{RALPH_ROOT}}</string>
+</dict>
+</plist>
