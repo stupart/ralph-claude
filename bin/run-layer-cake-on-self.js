@@ -17,6 +17,7 @@ const fsSync = require('fs');
 const { Ralph } = require('../lib/ralph');
 const { VerdictParser } = require('../lib/verdict-parser');
 const { EventLogger, EVENT_TYPES } = require('../lib/event-logger');
+const { DEFAULT_LAYER_THRESHOLDS } = require('../lib/stall-detector');
 
 // Project directory for the meta-improvement
 const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v8');
@@ -65,9 +66,65 @@ function parseArgs() {
       case '--start-layer':
         opts.startLayer = args[++i];
         break;
+      case '--stall-thresholds':
+        try {
+          opts.stallThresholds = JSON.parse(args[++i]);
+        } catch (e) {
+          console.warn('Warning: Invalid JSON for --stall-thresholds, using defaults');
+          opts.stallThresholds = null;
+        }
+        break;
+      case '--stall-multiplier': {
+        const val = parseFloat(args[++i]);
+        if (isNaN(val) || val <= 0) {
+          console.warn('Warning: Invalid --stall-multiplier value, using default (1)');
+          opts.stallMultiplier = 1;
+        } else {
+          opts.stallMultiplier = val;
+        }
+        break;
+      }
+      case '--stall-kill':
+        opts.stallKill = true;
+        break;
     }
   }
   return opts;
+}
+
+/**
+ * Build merged stall thresholds from defaults, multiplier, and explicit overrides.
+ * Precedence: defaults → multiplier → explicit overrides.
+ * @param {Object} defaults - DEFAULT_LAYER_THRESHOLDS (values in ms)
+ * @param {number} multiplier - Scaling factor (default 1)
+ * @param {Object|null} overrides - Explicit per-layer overrides (values in seconds from CLI)
+ * @returns {Object} Merged thresholds in milliseconds
+ */
+function buildStallThresholds(defaults, multiplier = 1, overrides = null) {
+  const result = {};
+
+  // Step 1: Copy defaults and apply multiplier
+  for (const [layer, ms] of Object.entries(defaults)) {
+    result[layer] = ms * multiplier;
+  }
+
+  // Step 2: Apply explicit overrides (CLI values are in seconds, convert to ms)
+  if (overrides) {
+    for (const [layer, seconds] of Object.entries(overrides)) {
+      if (!/^L\d+$/.test(layer)) {
+        console.warn(`Warning: Unknown layer ID '${layer}' in --stall-thresholds, ignoring`);
+        continue;
+      }
+      if (seconds <= 0) {
+        // Disable stall detection for this layer
+        result[layer] = Infinity;
+      } else {
+        result[layer] = seconds * 1000;
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -273,10 +330,14 @@ Documents in \`3-synthesis/\` are pre-build planning artifacts. Staleness relati
  * @param {Object} spawnConfig - From Ralph's AgentSpawner
  * @returns {Promise<Object>} Artifacts including reviewResult for judges
  */
-function createAgentExecutor(opts) {
+function createAgentExecutor(opts, ralph) {
   return async function agentExecutor(spawnConfig) {
     const layerId = spawnConfig.layerId;
     const agentType = spawnConfig.agentType;
+
+    // Create an AbortController for this session and wire it to the stall detector
+    const sessionAbortController = new AbortController();
+    ralph?.stallDetector?.setAbortController(sessionAbortController);
 
     // Capture layer and epic context for verdict parser (E2-F3)
     const verdictLayer = layerId || 'unknown';
@@ -329,12 +390,17 @@ function createAgentExecutor(opts) {
         spawnConfig.registerProcess(child);
       }
 
-      // Handle abort signal
+      // Handle abort signal from spawnConfig
       if (spawnConfig.abortSignal) {
         spawnConfig.abortSignal.addEventListener('abort', () => {
           if (!child.killed) child.kill('SIGTERM');
         });
       }
+
+      // Handle abort signal from stall detector's kill-on-critical
+      sessionAbortController.signal.addEventListener('abort', () => {
+        if (!child.killed) child.kill('SIGTERM');
+      });
 
       let stdout = '';
       let stderr = '';
@@ -351,6 +417,8 @@ function createAgentExecutor(opts) {
 
       child.on('close', (code) => {
         _childProcesses.delete(child);
+        // Clear the abort controller reference from the stall detector
+        ralph?.stallDetector?.setAbortController(null);
         console.log(`\n  Agent exited with code ${code}`);
 
         if (code !== 0) {
@@ -460,6 +528,13 @@ async function main() {
   console.log(`Max turns: ${opts.maxTurns}`);
   console.log('');
 
+  // Build stall thresholds from CLI args
+  const layerThresholds = buildStallThresholds(
+    DEFAULT_LAYER_THRESHOLDS,
+    opts.stallMultiplier || 1,
+    opts.stallThresholds || null
+  );
+
   // Initialize Ralph
   const ralph = new Ralph(PROJECT_DIR, {
     verbose: opts.verbose,
@@ -467,7 +542,9 @@ async function main() {
     agentTimeout: opts.timeout,
     dryRun: opts.dryRun,
     maxRetries: 2,
-    maxCascadeDepth: 5
+    maxCascadeDepth: 5,
+    layerThresholds,
+    killOnCritical: opts.stallKill || false
   });
 
   // Also point the spawner templates at the actual templates directory
@@ -528,7 +605,7 @@ async function main() {
   }
 
   // Create the agent executor
-  const agentExecutor = createAgentExecutor(opts);
+  const agentExecutor = createAgentExecutor(opts, ralph);
   _currentExecutor = agentExecutor; // Capture for signal handler
 
   // Track current layer/epic for signal handler context
