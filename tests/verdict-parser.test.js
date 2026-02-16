@@ -341,4 +341,86 @@ Verdict: PASS`;
       warnSpy.mockRestore();
     });
   });
+
+  describe('Expanded Patterns', () => {
+    describe('Bold markdown emphasis (**PASS** / **ITERATE**)', () => {
+      it('**PASS** on standalone line → PASS', () => {
+        const result = parser.parse('Review complete.\n**PASS**\n');
+        expect(result.verdict).toBe('PASS');
+      });
+
+      it('**ITERATE** on standalone line → ITERATE', () => {
+        const result = parser.parse('Issues found.\n**ITERATE**\n');
+        expect(result.verdict).toBe('ITERATE');
+      });
+
+      it('**PASS** in prose (not standalone) → should NOT match bold pattern', () => {
+        // "The result is **PASS** quality" has **PASS** embedded in a line
+        // This should not match the bold standalone pattern because it's not on its own line
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        const result = parser.parse('The result is **PASS** quality and we approve.');
+        // Smart defaults: no high-severity → PASS, but via fallback, not the bold pattern
+        expect(result.verdict).toBe('PASS');
+        expect(result.issues[0].title).toBe('Unparseable verdict');
+        warnSpy.mockRestore();
+      });
+    });
+
+    describe('Bare heading verdict (## PASS / # ITERATE)', () => {
+      it('## PASS as heading → PASS', () => {
+        const result = parser.parse('# Review\nSome text.\n## PASS\n');
+        expect(result.verdict).toBe('PASS');
+      });
+
+      it('# ITERATE as heading → ITERATE', () => {
+        const result = parser.parse('Some review.\n# ITERATE\n');
+        expect(result.verdict).toBe('ITERATE');
+      });
+
+      it('### PASS as h3 heading → PASS', () => {
+        const result = parser.parse('Details.\n### PASS\n');
+        expect(result.verdict).toBe('PASS');
+      });
+
+      it('## Passing criteria in heading → should NOT match', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        const result = parser.parse('## Passing criteria\nAll tests pass.');
+        // "Passing" != "PASS", and the pattern requires exact PASS|ITERATE
+        expect(result.issues[0].title).toBe('Unparseable verdict');
+        warnSpy.mockRestore();
+      });
+    });
+
+    describe('Overall prefix (Overall Verdict: PASS / Overall: ITERATE)', () => {
+      it('Overall Verdict: PASS → PASS', () => {
+        const result = parser.parse('Review summary.\nOverall Verdict: PASS');
+        expect(result.verdict).toBe('PASS');
+      });
+
+      it('Overall: ITERATE → ITERATE', () => {
+        const result = parser.parse('Found issues.\nOverall: ITERATE');
+        expect(result.verdict).toBe('ITERATE');
+      });
+
+      it('Overall Verdict: ITERATE → ITERATE', () => {
+        const result = parser.parse('Multiple problems.\nOverall Verdict: ITERATE');
+        expect(result.verdict).toBe('ITERATE');
+      });
+    });
+
+    describe('False positive rejection', () => {
+      it('prose with PASS and ITERATE words does not match expanded patterns', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        const result = parser.parse(
+          'This test will PASS the acceptance criteria. ' +
+          'If it does not, we will need to ITERATE on the design. ' +
+          'The overall approach is sound.'
+        );
+        // No structured verdict pattern, no high-severity → PASS via smart default
+        expect(result.verdict).toBe('PASS');
+        expect(result.issues[0].title).toBe('Unparseable verdict');
+        warnSpy.mockRestore();
+      });
+    });
+  });
 });
