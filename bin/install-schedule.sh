@@ -6,10 +6,22 @@ RALPH_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SOURCE="$RALPH_ROOT/support/com.ralph-claude.evolve.plist"
 TARGET="$HOME/Library/LaunchAgents/com.ralph-claude.evolve.plist"
 
+# Warn if running as root
+if [ "$(id -u)" -eq 0 ]; then
+  echo "Warning: launchd user agents should be installed as your user, not root." >&2
+fi
+
 # Verify source template exists
 if [ ! -f "$SOURCE" ]; then
   echo "Error: plist template not found at $SOURCE" >&2
   exit 1
+fi
+
+# Check for existing installation
+if [ -f "$TARGET" ]; then
+  echo "Warning: existing installation found at $TARGET"
+  echo "Unloading existing agent..."
+  launchctl unload "$TARGET" 2>/dev/null || true
 fi
 
 # Copy plist with path substitution
