@@ -275,6 +275,11 @@ function createAgentExecutor(opts) {
     const layerId = spawnConfig.layerId;
     const agentType = spawnConfig.agentType;
 
+    // Capture layer and epic context for verdict parser (E2-F3)
+    const verdictLayer = layerId || 'unknown';
+    const epicFromConfig = spawnConfig.context?.position?.epic;
+    const verdictEpic = epicFromConfig || (layerId === 'L11' ? 'all' : 'unknown');
+
     console.log(`\n${'='.repeat(60)}`);
     console.log(`  Spawning ${agentType} agent for ${layerId}`);
     console.log(`  Model: ${spawnConfig.model}`);
@@ -358,7 +363,11 @@ function createAgentExecutor(opts) {
 
         // Parse verdict for judge agents
         if (agentType === 'judge') {
-          artifacts.reviewResult = verdictParser.parse(stdout);
+          artifacts.reviewResult = verdictParser.parse(stdout, {
+            layer: verdictLayer,
+            epic: verdictEpic,
+            projectDir: PROJECT_DIR
+          });
           console.log(`\n  Verdict: ${artifacts.reviewResult.verdict} (${artifacts.reviewResult.issues.length} issues)`);
         }
 
