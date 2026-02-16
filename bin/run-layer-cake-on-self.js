@@ -16,6 +16,7 @@ const readline = require('readline');
 const fsSync = require('fs');
 const { Ralph } = require('../lib/ralph');
 const { VerdictParser } = require('../lib/verdict-parser');
+const { EventLogger, EVENT_TYPES } = require('../lib/event-logger');
 
 // Project directory for the meta-improvement
 const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v8');
@@ -637,6 +638,35 @@ async function main() {
       console.log(JSON.stringify(result, null, 2));
     }
   } while (result.status === 'waiting_human');
+
+  // Log verdict coverage metric after pipeline completes (E2-F4)
+  if (_verdictResults.length > 0) {
+    const totalVerdicts = _verdictResults.length;
+    const parseableCount = _verdictResults.filter(r => r.parsedExplicitly).length;
+    const parseablePercentage = Math.round((parseableCount / totalVerdicts) * 100);
+
+    // Per-layer breakdown
+    const perLayer = {};
+    for (const r of _verdictResults) {
+      if (!perLayer[r.layer]) {
+        perLayer[r.layer] = { total: 0, parseable: 0 };
+      }
+      perLayer[r.layer].total++;
+      if (r.parsedExplicitly) perLayer[r.layer].parseable++;
+    }
+    for (const layer of Object.keys(perLayer)) {
+      const l = perLayer[layer];
+      l.percentage = Math.round((l.parseable / l.total) * 100);
+    }
+
+    console.log(`\nVerdict coverage: ${parseableCount}/${totalVerdicts} (${parseablePercentage}%) parseable`);
+
+    ralph.eventLogger.log({
+      type: EVENT_TYPES.VERDICT_COVERAGE,
+      message: `Verdict coverage: ${parseableCount}/${totalVerdicts} (${parseablePercentage}%) parseable`,
+      meta: { totalVerdicts, parseableCount, parseablePercentage, perLayer }
+    });
+  }
 }
 
 if (require.main === module) {
