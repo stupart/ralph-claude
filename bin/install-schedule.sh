@@ -6,6 +6,17 @@ RALPH_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SOURCE="$RALPH_ROOT/support/com.ralph-claude.evolve.plist"
 TARGET="$HOME/Library/LaunchAgents/com.ralph-claude.evolve.plist"
 
+# Handle --uninstall
+if [ "$1" = "--uninstall" ]; then
+  if [ ! -f "$TARGET" ]; then
+    echo "No installation found at $TARGET"
+    exit 0
+  fi
+
+  # Uninstall logic added in subsequent tasks
+  exit 0
+fi
+
 # Warn if running as root
 if [ "$(id -u)" -eq 0 ]; then
   echo "Warning: launchd user agents should be installed as your user, not root." >&2
