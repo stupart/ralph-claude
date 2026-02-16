@@ -13,7 +13,11 @@ if [ "$1" = "--uninstall" ]; then
     exit 0
   fi
 
-  # Uninstall logic added in subsequent tasks
+  echo "Unloading agent..."
+  launchctl unload "$TARGET" 2>/dev/null || true
+
+  rm -f "$TARGET"
+
   exit 0
 fi
 
