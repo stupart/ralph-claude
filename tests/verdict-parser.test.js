@@ -77,8 +77,8 @@ describe('VerdictParser', () => {
       expect(result.verdict).toBe('PASS');
     });
 
-    it('VERDICT_PATTERNS has 7 patterns', () => {
-      expect(VERDICT_PATTERNS).toHaveLength(7);
+    it('VERDICT_PATTERNS has 10 patterns', () => {
+      expect(VERDICT_PATTERNS).toHaveLength(10);
     });
   });
 
