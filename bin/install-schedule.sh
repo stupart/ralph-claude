@@ -15,3 +15,18 @@ fi
 # Copy plist with path substitution
 mkdir -p "$HOME/Library/LaunchAgents"
 sed "s|{{RALPH_ROOT}}|$RALPH_ROOT|g" "$SOURCE" > "$TARGET"
+
+# Create logs directory
+mkdir -p "$RALPH_ROOT/_evolution/logs"
+
+# Load the agent
+if ! launchctl load "$TARGET" 2>&1; then
+  echo "Error: launchctl load failed" >&2
+  exit 1
+fi
+
+# Print confirmation
+echo "Installed: $TARGET"
+echo "Project root: $RALPH_ROOT"
+echo "Logs: $RALPH_ROOT/_evolution/logs/"
+echo "Verify: launchctl list | grep ralph"
