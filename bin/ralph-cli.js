@@ -146,6 +146,7 @@ Commands:
   status     Show current project state and progress
   resume     Recover from crash or interrupted state
   cost       Show token usage and cost estimates
+  evolve     Run autonomous evolution session
   prompts    Prompt Lab tools
     list                List all templates with metadata (default)
     edit <identifier>   Edit a template with live preview
@@ -169,6 +170,7 @@ Examples:
   ralph-cli run --dir ./my-project --auto-approve
   ralph-cli resume --dir ./my-project
   ralph-cli cost --dir ./my-project
+  ralph-cli evolve --variant vivid --hours 8   Run 8-hour evolution with vivid variant
 `);
 }
 
@@ -529,6 +531,12 @@ async function main() {
     case 'cost':
       await cmdCost(options);
       break;
+    case 'evolve': {
+      const { main: evolveMain } = require('./evolve');
+      const evolveArgv = process.argv.slice(process.argv.indexOf('evolve') + 1);
+      await evolveMain(evolveArgv);
+      break;
+    }
     case 'prompts':
       await cmdPrompts(options);
       break;
