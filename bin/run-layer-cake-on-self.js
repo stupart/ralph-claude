@@ -235,8 +235,10 @@ async function buildFullPrompt(spawnConfig, layerId) {
   }
 
   // Add instructions for judges to output parseable verdicts
+  // Only append verdict format block if the template doesn't already contain the CRITICAL section
   if (spawnConfig.agentType === 'judge') {
-    prompt += `\n\n## CRITICAL: Verdict Output Format
+    if (!prompt.includes('CRITICAL: Verdict Format Requirements')) {
+      prompt += `\n\n## CRITICAL: Verdict Output Format
 
 You MUST end your review with a structured verdict section in this exact format:
 
@@ -252,6 +254,7 @@ OR
 - [ESCALATE] Issue title: Description of the issue
 
 This format is machine-parsed. Do not deviate from it.`;
+    }
 
     prompt += `\n\n## Review Scope Notes
 
