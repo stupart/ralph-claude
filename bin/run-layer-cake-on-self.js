@@ -17,8 +17,8 @@ const fsSync = require('fs');
 const { Ralph } = require('../lib/ralph');
 const { VerdictParser } = require('../lib/verdict-parser');
 
-// Project directory for the meta-improvement
-const PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v7');
+// Project directory for the meta-improvement (overridable via --project-dir)
+let PROJECT_DIR = path.join(__dirname, '..', '_layer-cake-v7');
 // The actual codebase the builder will modify
 const CODEBASE_ROOT = path.join(__dirname, '..');
 const verdictParser = new VerdictParser(PROJECT_DIR);
@@ -61,6 +61,9 @@ function parseArgs() {
         break;
       case '--start-layer':
         opts.startLayer = args[++i];
+        break;
+      case '--project-dir':
+        opts.projectDir = args[++i];
         break;
     }
   }
@@ -378,6 +381,10 @@ async function promptHumanGate(layerId, ralph) {
  */
 async function main() {
   const opts = parseArgs();
+
+  if (opts.projectDir) {
+    PROJECT_DIR = path.resolve(opts.projectDir);
+  }
 
   console.log('Layer Cake on Layer Cake');
   console.log('=======================');
