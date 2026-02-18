@@ -19,16 +19,35 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 const { Ralph, CostTracker } = require('../lib/ralph');
 const { RecoveryManager } = require('../lib/recovery');
 const { StateManager, LAYERS } = require('../lib/state-machine');
 const { listTemplates, initProject } = require('../lib/templates');
+const { createWatchSource, createIntegratedSource } = require('../lib/tui/data-source');
+const controller = require('../lib/tui/controller');
+const terminal = require('../lib/tui/terminal');
+
+// Global error boundary — registered at module load time
+process.on('uncaughtException', (err) => {
+  try { terminal.cleanup(); } catch {}
+  process.stderr.write(`Unhandled error: ${err.message}\n`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  try { terminal.cleanup(); } catch {}
+  const message = reason instanceof Error ? reason.message : String(reason);
+  process.stderr.write(`Unhandled rejection: ${message}\n`);
+  process.exit(1);
+});
 
 // Parse CLI arguments into command + options
 function parseArgs(argv) {
   const args = argv.slice(2);
   const result = {
     command: null,
+    projectDir: null,
     options: {
       dir: process.cwd(),
       template: 'web-app',
@@ -36,7 +55,8 @@ function parseArgs(argv) {
       autoApproveGates: false,
       timeout: 300000,
       dryRun: false,
-      noColor: false
+      noColor: false,
+      tui: false
     }
   };
 
@@ -73,6 +93,9 @@ function parseArgs(argv) {
       case '--dry-run':
         result.options.dryRun = true;
         break;
+      case '--tui':
+        result.options.tui = true;
+        break;
       case '--no-color':
         result.options.noColor = true;
         colorEnabled = false;
@@ -80,7 +103,18 @@ function parseArgs(argv) {
       case '--help':
         result.command = 'help';
         break;
+      default:
+        // Capture first non-flag positional after command for 'watch'
+        if (result.command === 'watch' && !args[i].startsWith('-') && result.projectDir === null) {
+          result.projectDir = args[i];
+        }
+        break;
     }
+  }
+
+  // Default projectDir for watch command
+  if (result.command === 'watch' && result.projectDir === null) {
+    result.projectDir = '.';
   }
 
   return result;
@@ -132,6 +166,60 @@ function formatLayerLine(layerId, layer, currentLayer, useColor = true) {
   }
 }
 
+// ─── E4-F4: Input Validation ──────────────────────────────────────────
+
+function validateTTY(commandName) {
+  if (!process.stdout.isTTY || !process.stdin.isTTY) {
+    process.stderr.write(`Error: ${commandName} requires an interactive terminal.\n`);
+    process.exit(1);
+  }
+}
+
+function validateTerminalSize() {
+  const cols = process.stdout.columns || 80;
+  const rows = process.stdout.rows || 24;
+  if (cols < 60 || rows < 10) {
+    process.stderr.write(`Error: Terminal too small (${cols}x${rows}). Minimum: 60x10.\n`);
+    process.exit(1);
+  }
+}
+
+function validateProjectDir(resolvedPath) {
+  if (!fs.existsSync(resolvedPath)) {
+    process.stderr.write(`Error: Project directory not found: ${resolvedPath}\n`);
+    process.exit(1);
+  }
+  const stat = fs.statSync(resolvedPath);
+  if (!stat.isDirectory()) {
+    process.stderr.write(`Error: Project path is not a directory: ${resolvedPath}\n`);
+    process.exit(1);
+  }
+  try {
+    fs.accessSync(resolvedPath, fs.constants.R_OK);
+  } catch {
+    process.stderr.write(`Error: Permission denied: ${resolvedPath}\n`);
+    process.exit(1);
+  }
+}
+
+// ─── E4-F1: Watch Command ────────────────────────────────────────────
+
+function cmdWatch(projectDir) {
+  validateTTY('ralph watch');
+  validateTerminalSize();
+  const resolvedDir = path.resolve(projectDir);
+  validateProjectDir(resolvedDir);
+
+  const dataSource = createWatchSource(resolvedDir);
+  try {
+    controller.start('watch', { projectDir: resolvedDir, dataSource });
+  } catch (err) {
+    try { terminal.cleanup(); } catch {}
+    process.stderr.write(`Error: TUI initialization failed: ${err.message}\n`);
+    process.exit(1);
+  }
+}
+
 // Commands
 
 async function cmdHelp() {
@@ -146,6 +234,7 @@ Commands:
   status     Show current project state and progress
   resume     Recover from crash or interrupted state
   cost       Show token usage and cost estimates
+  watch [dir]  Monitor a running pipeline with the TUI dashboard
   evolve     Run autonomous evolution session
   prompts    Prompt Lab tools
     list                List all templates with metadata (default)
@@ -161,6 +250,7 @@ Options:
   --auto-approve     Auto-approve human gates (L3, L7)
   --timeout <ms>     Agent timeout in milliseconds (default: 300000)
   --dry-run          Show spawn config without executing agent
+  --tui              Launch with interactive TUI dashboard (requires terminal)
   --no-color         Disable colored output
   --help             Show this help
 
@@ -168,6 +258,8 @@ Examples:
   ralph-cli init --template web-app --dir ./my-project
   ralph-cli status --dir ./my-project
   ralph-cli run --dir ./my-project --auto-approve
+  ralph-cli run --dir ./my-project --tui
+  ralph-cli watch ./my-project
   ralph-cli resume --dir ./my-project
   ralph-cli cost --dir ./my-project
   ralph-cli evolve --variant vivid --hours 8   Run 8-hour evolution with vivid variant
@@ -263,6 +355,45 @@ async function cmdStatus(options) {
 }
 
 async function cmdRun(options) {
+  // ─── E4-F2: TUI integrated mode branch ─────────────────────────────
+  if (options.tui) {
+    validateTTY('--tui');
+    validateTerminalSize();
+
+    try {
+      const ralph = new Ralph(options.dir, {
+        verbose: options.verbose,
+        autoApproveGates: options.autoApproveGates,
+        agentTimeout: options.timeout,
+        dryRun: options.dryRun
+      });
+
+      const dataSource = createIntegratedSource(ralph);
+
+      controller.start('integrated', {
+        projectDir: options.dir,
+        dataSource,
+        autoApprove: options.autoApproveGates,
+        dryRun: options.dryRun,
+        timeout: options.timeout,
+      });
+
+      const initResult = await ralph.initialize();
+
+      if (initResult.status === 'complete') {
+        return;
+      }
+
+      await ralph.runNextLayer();
+    } catch (err) {
+      try { terminal.cleanup(); } catch {}
+      process.stderr.write(`Error: TUI initialization failed: ${err.message}\n`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // ─── Non-TUI path (unchanged) ──────────────────────────────────────
   console.log(`Running project at: ${options.dir}`);
 
   try {
@@ -355,11 +486,11 @@ async function cmdCost(options) {
     console.log('');
 
     // Try to read event log for historical data
-    const fs = require('fs').promises;
+    const fsp = require('fs').promises;
     const eventsPath = path.join(options.dir, '_events.jsonl');
 
     try {
-      const content = await fs.readFile(eventsPath, 'utf8');
+      const content = await fsp.readFile(eventsPath, 'utf8');
       const events = content.trim().split('\n')
         .filter(line => line.trim())
         .map(line => {
@@ -513,7 +644,8 @@ async function handlePromptsReport() {
 
 // Main entry point
 async function main() {
-  const { command, options } = parseArgs(process.argv);
+  const parsed = parseArgs(process.argv);
+  const { command, options } = parsed;
 
   switch (command) {
     case 'init':
@@ -521,6 +653,9 @@ async function main() {
       break;
     case 'run':
       await cmdRun(options);
+      break;
+    case 'watch':
+      cmdWatch(parsed.projectDir);
       break;
     case 'status':
       await cmdStatus(options);
@@ -556,7 +691,7 @@ function setColorEnabled(enabled) {
 }
 
 // Export for testing
-module.exports = { parseArgs, cmdInit, cmdStatus, cmdResume, cmdCost, cmdPrompts, formatLayerLine, COLORS, color, setColorEnabled };
+module.exports = { parseArgs, cmdInit, cmdStatus, cmdResume, cmdCost, cmdPrompts, cmdWatch, formatLayerLine, COLORS, color, setColorEnabled, validateTTY, validateTerminalSize, validateProjectDir };
 
 // Run if executed directly
 if (require.main === module) {
