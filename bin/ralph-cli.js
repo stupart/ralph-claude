@@ -30,13 +30,13 @@ const terminal = require('../lib/tui/terminal');
 
 // Global error boundary — registered at module load time
 process.on('uncaughtException', (err) => {
-  try { terminal.cleanup(); } catch {}
+  terminal.cleanup();
   process.stderr.write(`Unhandled error: ${err.message}\n`);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-  try { terminal.cleanup(); } catch {}
+  terminal.cleanup();
   const message = reason instanceof Error ? reason.message : String(reason);
   process.stderr.write(`Unhandled rejection: ${message}\n`);
   process.exit(1);
@@ -170,7 +170,7 @@ function formatLayerLine(layerId, layer, currentLayer, useColor = true) {
 
 function validateTTY(commandName) {
   if (!process.stdout.isTTY || !process.stdin.isTTY) {
-    process.stderr.write(`Error: ${commandName} requires an interactive terminal.\n`);
+    process.stderr.write(`ralph ${commandName} requires a TTY terminal\n`);
     process.exit(1);
   }
 }
@@ -179,25 +179,25 @@ function validateTerminalSize() {
   const cols = process.stdout.columns || 80;
   const rows = process.stdout.rows || 24;
   if (cols < 60 || rows < 10) {
-    process.stderr.write(`Error: Terminal too small (${cols}x${rows}). Minimum: 60x10.\n`);
+    process.stderr.write(`Terminal too small (${cols}x${rows}). Minimum: 60x10.\n`);
     process.exit(1);
   }
 }
 
 function validateProjectDir(resolvedPath) {
   if (!fs.existsSync(resolvedPath)) {
-    process.stderr.write(`Error: Project directory not found: ${resolvedPath}\n`);
+    process.stderr.write(`Project directory not found: ${resolvedPath}\n`);
     process.exit(1);
   }
   const stat = fs.statSync(resolvedPath);
   if (!stat.isDirectory()) {
-    process.stderr.write(`Error: Project path is not a directory: ${resolvedPath}\n`);
+    process.stderr.write(`not a directory: ${resolvedPath}\n`);
     process.exit(1);
   }
   try {
     fs.accessSync(resolvedPath, fs.constants.R_OK);
   } catch {
-    process.stderr.write(`Error: Permission denied: ${resolvedPath}\n`);
+    process.stderr.write(`Permission denied: ${resolvedPath}\n`);
     process.exit(1);
   }
 }
@@ -205,7 +205,7 @@ function validateProjectDir(resolvedPath) {
 // ─── E4-F1: Watch Command ────────────────────────────────────────────
 
 function cmdWatch(projectDir) {
-  validateTTY('ralph watch');
+  validateTTY('watch');
   validateTerminalSize();
   const resolvedDir = path.resolve(projectDir);
   validateProjectDir(resolvedDir);
@@ -214,8 +214,8 @@ function cmdWatch(projectDir) {
   try {
     controller.start('watch', { projectDir: resolvedDir, dataSource });
   } catch (err) {
-    try { terminal.cleanup(); } catch {}
-    process.stderr.write(`Error: TUI initialization failed: ${err.message}\n`);
+    terminal.cleanup();
+    process.stderr.write(`TUI initialization failed: ${err.message}\n`);
     process.exit(1);
   }
 }
@@ -386,8 +386,8 @@ async function cmdRun(options) {
 
       await ralph.runNextLayer();
     } catch (err) {
-      try { terminal.cleanup(); } catch {}
-      process.stderr.write(`Error: TUI initialization failed: ${err.message}\n`);
+      terminal.cleanup();
+      process.stderr.write(`TUI initialization failed: ${err.message}\n`);
       process.exit(1);
     }
     return;
