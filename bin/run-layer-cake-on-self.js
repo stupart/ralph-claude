@@ -51,7 +51,8 @@ function parseArgs() {
         opts.dryRun = true;
         break;
       case '--timeout':
-        opts.timeout = parseInt(args[++i]) || 600000;
+        const t = parseInt(args[++i]);
+        opts.timeout = isNaN(t) ? 600000 : t;
         break;
       case '--max-turns':
         opts.maxTurns = parseInt(args[++i]) || 100;
